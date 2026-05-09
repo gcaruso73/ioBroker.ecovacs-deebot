@@ -296,34 +296,25 @@ describe("main.js - getDeviceList (admin selectSendTo)", () => {
 
     describe("getDeviceList method", () => {
         it("should return empty array when email is missing", async () => {
-            const result = await instance.getDeviceList({
-                email: "",
-                password: "test",
-                countrycode: "de",
-                authDomain: ""
-            });
+            instance.config.email = "";
+            instance.password = "test";
+            const result = await instance.getDeviceList();
             expect(result).to.be.an("array");
             expect(result).to.be.empty;
         });
 
         it("should return empty array when password is missing", async () => {
-            const result = await instance.getDeviceList({
-                email: "test@example.com",
-                password: "",
-                countrycode: "de",
-                authDomain: ""
-            });
+            instance.config.email = "test@example.com";
+            instance.password = "";
+            const result = await instance.getDeviceList();
             expect(result).to.be.an("array");
             expect(result).to.be.empty;
         });
 
         it("should return empty array when API returns no devices", async () => {
-            const result = await instance.getDeviceList({
-                email: "test@example.com",
-                password: "testpass",
-                countrycode: "de",
-                authDomain: ""
-            });
+            instance.config.email = "test@example.com";
+            instance.password = "testpass";
+            const result = await instance.getDeviceList();
             expect(result).to.be.an("array");
             expect(result).to.be.empty;
         });
@@ -339,12 +330,9 @@ describe("main.js - getDeviceList (admin selectSendTo)", () => {
                 }
             ]);
 
-            const result = await instance.getDeviceList({
-                email: "test@example.com",
-                password: "testpass",
-                countrycode: "de",
-                authDomain: ""
-            });
+            instance.config.email = "test@example.com";
+            instance.password = "testpass";
+            const result = await instance.getDeviceList();
 
             expect(result).to.be.an("array");
             expect(result).to.have.lengthOf(1);
@@ -365,12 +353,9 @@ describe("main.js - getDeviceList (admin selectSendTo)", () => {
                 }
             ]);
 
-            const result = await instance.getDeviceList({
-                email: "test@example.com",
-                password: "testpass",
-                countrycode: "de",
-                authDomain: ""
-            });
+            instance.config.email = "test@example.com";
+            instance.password = "testpass";
+            const result = await instance.getDeviceList();
 
             expect(result).to.have.lengthOf(1);
             expect(result[0].label).to.equal("DEEBOT X1");
@@ -387,12 +372,9 @@ describe("main.js - getDeviceList (admin selectSendTo)", () => {
                 }
             ]);
 
-            const result = await instance.getDeviceList({
-                email: "test@example.com",
-                password: "testpass",
-                countrycode: "de",
-                authDomain: ""
-            });
+            instance.config.email = "test@example.com";
+            instance.password = "testpass";
+            const result = await instance.getDeviceList();
 
             expect(result).to.have.lengthOf(1);
             expect(result[0].label).to.include("My Bot");
@@ -407,12 +389,9 @@ describe("main.js - getDeviceList (admin selectSendTo)", () => {
                 }
             ]);
 
-            const result = await instance.getDeviceList({
-                email: "test@example.com",
-                password: "testpass",
-                countrycode: "de",
-                authDomain: ""
-            });
+            instance.config.email = "test@example.com";
+            instance.password = "testpass";
+            const result = await instance.getDeviceList();
 
             expect(result).to.have.lengthOf(1);
             expect(result[0].label).to.equal("Unknown Device");
@@ -426,12 +405,9 @@ describe("main.js - getDeviceList (admin selectSendTo)", () => {
                 { did: "DEV-003", deviceName: "Third Bot", name: "Third Bot", class: "c" }
             ]);
 
-            const result = await instance.getDeviceList({
-                email: "test@example.com",
-                password: "testpass",
-                countrycode: "de",
-                authDomain: ""
-            });
+            instance.config.email = "test@example.com";
+            instance.password = "testpass";
+            const result = await instance.getDeviceList();
 
             expect(result).to.have.lengthOf(3);
             expect(result[0].value).to.equal("DEV-001");
@@ -443,12 +419,9 @@ describe("main.js - getDeviceList (admin selectSendTo)", () => {
         it("should return empty array on API connection error", async () => {
             apiMock.connect = sinon.stub().rejects(new Error("Connection refused"));
 
-            const result = await instance.getDeviceList({
-                email: "test@example.com",
-                password: "testpass",
-                countrycode: "de",
-                authDomain: ""
-            });
+            instance.config.email = "test@example.com";
+            instance.password = "testpass";
+            const result = await instance.getDeviceList();
 
             expect(result).to.be.an("array");
             expect(result).to.be.empty;
@@ -457,12 +430,9 @@ describe("main.js - getDeviceList (admin selectSendTo)", () => {
         it("should return empty array on authentication failure", async () => {
             apiMock.connect = sinon.stub().rejects(new Error("authentication failed"));
 
-            const result = await instance.getDeviceList({
-                email: "test@example.com",
-                password: "wrongpass",
-                countrycode: "de",
-                authDomain: ""
-            });
+            instance.config.email = "test@example.com";
+            instance.password = "wrongpass";
+            const result = await instance.getDeviceList();
 
             expect(result).to.be.an("array");
             expect(result).to.be.empty;
@@ -474,12 +444,9 @@ describe("main.js - getDeviceList (admin selectSendTo)", () => {
                 { did: "DEV-AIR", deviceName: "Airbot Z1", name: "Airbot Z1", class: "b" }
             ]);
 
-            const result = await instance.getDeviceList({
-                email: "test@example.com",
-                password: "testpass",
-                countrycode: "de",
-                authDomain: ""
-            });
+            instance.config.email = "test@example.com";
+            instance.password = "testpass";
+            const result = await instance.getDeviceList();
 
             expect(result).to.have.lengthOf(2);
             expect(result[0].description).to.include("Vacuum Cleaner");
@@ -501,10 +468,7 @@ describe("main.js - getDeviceList (admin selectSendTo)", () => {
 
             await instance.onMessage({
                 command: "getDeviceList",
-                message: {
-                    email: "test@example.com",
-                    password: "testpass"
-                },
+                message: {},
                 from: "admin",
                 callback: {}
             });
@@ -521,10 +485,7 @@ describe("main.js - getDeviceList (admin selectSendTo)", () => {
 
             await instance.onMessage({
                 command: "getDeviceList",
-                message: {
-                    email: "test@example.com",
-                    password: "testpass"
-                },
+                message: {},
                 from: "admin",
                 callback: {}
             });
@@ -547,12 +508,9 @@ describe("main.js - getDeviceList (admin selectSendTo)", () => {
                 { did: "ECO-001", deviceName: "DEEBOT T10", nick: "Main", name: "DEEBOT T10", class: "x" }
             ]);
 
-            const result = await instance.getDeviceList({
-                email: "test@example.com",
-                password: "testpass",
-                countrycode: "de",
-                authDomain: ""
-            });
+            instance.config.email = "test@example.com";
+            instance.password = "testpass";
+            const result = await instance.getDeviceList();
 
             expect(result).to.be.an("array");
             result.forEach(item => {
@@ -568,12 +526,9 @@ describe("main.js - getDeviceList (admin selectSendTo)", () => {
                 { did: "ECO-001", deviceName: "DEEBOT T10", name: "DEEBOT T10", class: "x" }
             ]);
 
-            const result = await instance.getDeviceList({
-                email: "test@example.com",
-                password: "testpass",
-                countrycode: "de",
-                authDomain: ""
-            });
+            instance.config.email = "test@example.com";
+            instance.password = "testpass";
+            const result = await instance.getDeviceList();
 
             result.forEach(item => {
                 expect(item).to.have.property("description");

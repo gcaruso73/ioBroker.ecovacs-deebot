@@ -133,7 +133,7 @@ class EcovacsDeebot extends utils.Adapter {
         } else if (obj && obj.command === 'getDeviceList') {
             this.log.info('Received getDeviceList request from admin interface');
             try {
-                const result = await this.getDeviceList(obj.message);
+                const result = await this.getDeviceList();
                 this.sendTo(obj.from, obj.command, result, obj.callback);
             } catch (error) {
                 this.log.error('Error in getDeviceList: ' + error.message);
@@ -202,11 +202,15 @@ class EcovacsDeebot extends utils.Adapter {
         }
     }
 
-    async getDeviceList(credentials) {
-        const { email, password, countrycode, authDomain } = credentials;
+    async getDeviceList() {
+        // Read credentials from adapter config (decrypted by js-controller)
+        const email = this.config.email || this.config?.native?.email || '';
+        const password = this.password || this.config.password || this.config?.native?.password || '';
+        const countrycode = this.config.countrycode || this.config?.native?.countrycode || 'de';
+        const authDomain = this.config.authDomain || this.config?.native?.authDomain || '';
 
         if (!email || !password) {
-            this.log.warn('getDeviceList: email or password missing in request. Check jsonData template resolution.');
+            this.log.debug('getDeviceList: no credentials in adapter config, returning empty list');
             return [];
         }
 
@@ -239,9 +243,9 @@ class EcovacsDeebot extends utils.Adapter {
                     : deviceName;
                 const deviceType = this.getDeviceTypeFromDevice(device);
                 return {
-                    value: device.did,
+                    value: device.did || device.name || 'unknown',
                     label: displayName,
-                    description: `${deviceType} [${device.did}]`
+                    description: `${deviceType} [${device.did || device.name || 'unknown'}]`
                 };
             });
         } catch (error) {
