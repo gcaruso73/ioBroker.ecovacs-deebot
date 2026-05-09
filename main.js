@@ -30,6 +30,7 @@ class EcovacsDeebot extends utils.Adapter {
         this.on('stateChange', this.onStateChange.bind(this));
         this.on('unload', this.onUnload.bind(this));
         this.on('message', this.onMessage.bind(this));
+        this.log.info(`EcovacsDeebot constructor: namespace=${this.namespace}, compact=${this.compact}`);
 
         this.deviceContexts = new Map();
         this.canvasModuleIsInstalled = EcoVacsAPI.isCanvasModuleAvailable();
@@ -55,6 +56,7 @@ class EcovacsDeebot extends utils.Adapter {
     }
 
     async onReady() {
+        this.log.info(`EcovacsDeebot onReady: namespace=${this.namespace}, adapter is alive and listening`);
         // Migrate legacy native key that collides with dot-notation unflattening
         await this.migrateNativeConfig();
 
@@ -74,6 +76,15 @@ class EcovacsDeebot extends utils.Adapter {
             this.log.error('No password configured. Please check adapter config.');
         }
         this.subscribeStates('*');
+
+        // Self-test: verify sendTo message routing works
+        this.log.info(`Self-test: sending sendTo to ${this.namespace} with command getDeviceList`);
+        this.sendTo(this.namespace, 'getDeviceList', {}, (result) => {
+            this.log.info(`Self-test sendTo response received: ${JSON.stringify(result)}`);
+        });
+        this.sendTo(this.namespace, 'loginAndFetchDevices', { email: 'test', password: 'test' }, (result) => {
+            this.log.info(`Self-test loginAndFetchDevices response received: ${JSON.stringify(result)}`);
+        });
     }
 
     onUnload(callback) {
