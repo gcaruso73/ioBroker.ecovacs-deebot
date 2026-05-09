@@ -268,12 +268,16 @@
           "lg": 12
         },
         "singleDeviceId": {
-          "type": "text",
+          "type": "autocompleteSendTo",
           "newLine": true,
           "sm": 12,
           "md": 12,
           "lg": 12,
           "label": "singleDeviceId",
+          "command": "getDeviceList",
+          "data": {},
+          "noTranslation": true,
+          "freeSolo": true,
           "hidden": "!data.singleDeviceMode"
         },
         "_loginTest": {
