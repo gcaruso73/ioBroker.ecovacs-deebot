@@ -81,9 +81,6 @@ class EcovacsDeebot extends utils.Adapter {
         this.sendTo(this.namespace, 'getDeviceList', {}, (result) => {
             this.log.info(`Self-test sendTo response received: ${JSON.stringify(result)}`);
         });
-        this.sendTo(this.namespace, 'loginAndFetchDevices', { email: 'test', password: 'test' }, (result) => {
-            this.log.info(`Self-test loginAndFetchDevices response received: ${JSON.stringify(result)}`);
-        });
     }
 
     onUnload(callback) {
@@ -1214,6 +1211,9 @@ class EcovacsDeebot extends utils.Adapter {
         if (device.deviceName) {
             if (device.deviceName.includes('Airbot') || device.deviceName.includes('AVA') || device.deviceName.includes('ANDY')) {
                 return 'Air Purifier';
+            }
+            if (device.deviceName.includes('Air Quality') || device.deviceName.includes('Z1 Air')) {
+                return 'Air Quality Monitor';
             }
             if (device.deviceName.includes('GOAT') || device.deviceName.includes('Goat')) {
                 return 'Lawn Mower';
