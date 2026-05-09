@@ -46,5 +46,8 @@
   "enableKeepLatest": "Aktivieren (nur neueste behalten)",
   "feature.consumable.airFreshener": "Erstelle Datenpunkt f√ºr die Lufterfrischer Lebensdauer (\"consumable.airFreshener\")",
   "feature.cleaninglog.downloadLastCleaningMapImage": "Automatisches Herunterladen vom Image der letzten Reinigung",
-  "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": "Reinigungszeit in Stunden, bis das Flag f√ºr die Staubbeutel-Erinnerung gesetzt wird"
+  "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": "Reinigungszeit in Stunden, bis das Flag f√ºr die Staubbeutel-Erinnerung gesetzt wird",
+  "singleDeviceMode": "Einzelger‰temodus (nur ein Ger‰t verbinden)",
+  "singleDeviceId": "Ger‰t",
+  "singleDeviceInfoText": "Aktivieren, um nur ein einzelnes Ger‰t zu verbinden. Die Ger‰te-ID wird aus dem Statusbaum entfernt (flache Struktur). Benutzen Sie zuerst den Anmelden & Verbindung testen Button, um Ihre Ger‰te zu entdecken."
 }

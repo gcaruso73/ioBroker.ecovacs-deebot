@@ -130,6 +130,15 @@ class EcovacsDeebot extends utils.Adapter {
                     result: null
                 }, obj.callback);
             }
+        } else if (obj && obj.command === 'getDeviceList') {
+            this.log.info('Received getDeviceList request from admin interface');
+            try {
+                const result = await this.getDeviceList(obj.message);
+                this.sendTo(obj.from, obj.command, result, obj.callback);
+            } catch (error) {
+                this.log.error('Error in getDeviceList: ' + error.message);
+                this.sendTo(obj.from, obj.command, [], obj.callback);
+            }
         }
     }
 
@@ -190,6 +199,53 @@ class EcovacsDeebot extends utils.Adapter {
         } catch (error) {
             this.log.error('Device discovery failed: ' + error.message);
             throw new Error('Login failed: ' + (error.message || 'Unknown error'));
+        }
+    }
+
+    async getDeviceList(credentials) {
+        const { email, password, countrycode, authDomain } = credentials;
+
+        if (!email || !password) {
+            return [];
+        }
+
+        const passwordHash = EcoVacsAPI.md5(password);
+        const deviceId = EcoVacsAPI.getDeviceId(nodeMachineId.machineIdSync(), 0);
+        const countryCode = (countrycode || 'de').toLowerCase();
+        const continent = (ecovacsDeebot.countries)[countryCode.toUpperCase()]?.continent?.toLowerCase() || 'eu';
+        const authDomainValue = authDomain || 'ecovacs.com';
+
+        this.log.info(`Fetching device list for admin UI: ${email} (${countryCode})`);
+
+        try {
+            const api = new EcoVacsAPI(deviceId, countryCode, continent, authDomainValue);
+            await api.connect(email, passwordHash);
+            const devices = await api.devices();
+
+            const numberOfDevices = Object.keys(devices).length;
+            this.log.info(`Device list fetch successful. Found ${numberOfDevices} device(s)`);
+
+            if (numberOfDevices === 0) {
+                return [];
+            }
+
+            // Format devices for selectSendTo dropdown
+            // Response must be [{value, label, (optional) description}, ...]
+            return devices.map(device => {
+                const deviceName = device.deviceName || device.name || 'Unknown Device';
+                const displayName = device.nick
+                    ? `${deviceName} (${device.nick})`
+                    : deviceName;
+                const deviceType = this.getDeviceTypeFromDevice(device);
+                return {
+                    value: device.did,
+                    label: displayName,
+                    description: `${deviceType} [${device.did}]`
+                };
+            });
+        } catch (error) {
+            this.log.error('Failed to fetch device list for admin UI: ' + error.message);
+            return [];
         }
     }
 

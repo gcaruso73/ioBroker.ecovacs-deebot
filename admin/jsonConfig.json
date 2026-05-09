@@ -267,8 +267,12 @@
           "lg": 12
         },
         "singleDeviceId": {
-          "type": "text",
+          "type": "selectSendTo",
+          "command": "getDeviceList",
+          "jsonData": "{\"email\":\"${data.email}\",\"password\":\"${data.password}\",\"countrycode\":\"${data.countrycode}\",\"authDomain\":\"${data.authDomain}\"}",
           "label": "singleDeviceId",
+          "noTranslation": true,
+          "alsoDependsOn": ["email", "password", "countrycode", "authDomain", "singleDeviceMode"],
           "sm": 12,
           "md": 12,
           "lg": 12,
