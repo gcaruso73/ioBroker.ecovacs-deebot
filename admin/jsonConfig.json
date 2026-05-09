@@ -250,6 +250,30 @@
           "md": 6,
           "lg": 6
         },
+        "_singleDeviceModeSection": {
+          "newLine": true,
+          "type": "staticText",
+          "label": "singleDeviceInfoText",
+          "sm": 12,
+          "md": 12,
+          "lg": 12
+        },
+        "singleDeviceMode": {
+          "type": "checkbox",
+          "label": "singleDeviceMode",
+          "default": false,
+          "sm": 12,
+          "md": 12,
+          "lg": 12
+        },
+        "singleDeviceId": {
+          "type": "text",
+          "label": "singleDeviceId",
+          "sm": 12,
+          "md": 12,
+          "lg": 12,
+          "hidden": "!data.singleDeviceMode"
+        },
         "_loginTest": {
           "newLine": true,
           "type": "sendTo",

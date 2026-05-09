@@ -164,7 +164,9 @@
     "feature.cleaninglog.downloadLastCleaningMapImage": "",
     "feature.consumable.airFreshener": "",
     "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": 0,
-    "languageForSpotAreaNames": "en"
+    "languageForSpotAreaNames": "en",
+    "singleDeviceMode": false,
+    "singleDeviceId": ""
   },
   "objects": [],
   "instanceObjects": [

@@ -46,5 +46,8 @@
   "enableKeepLatest": "Enable (keep latest only)",
   "feature.consumable.airFreshener": "Create state for Air Freshener life span component (\"consumable.airFreshener\")",
   "feature.cleaninglog.downloadLastCleaningMapImage": "Automatic download of the last cleaning image",
-  "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": "Hours of cleaning time until dust bag reminder flag is set"
+  "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": "Hours of cleaning time until dust bag reminder flag is set",
+  "singleDeviceMode": "Single device mode (only connect one device)",
+  "singleDeviceId": "Device name or nick (as shown in login test)",
+  "singleDeviceInfoText": "Enable this to connect only a single device. The device ID will be removed from the state tree (flat structure). Use the Login and Test Connection button first to discover your devices."
 }

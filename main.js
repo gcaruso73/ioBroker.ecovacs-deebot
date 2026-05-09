@@ -196,6 +196,18 @@ class EcovacsDeebot extends utils.Adapter {
         const relativeId = id.replace(this.namespace + '.', '');
         const parts = relativeId.split('.');
         const deviceId = parts[0];
+
+        // Single device mode: route ALL state changes to the single context
+        if (this.config.singleDeviceMode) {
+            const ctx = this.deviceContexts.values().next().value;
+            if (!ctx) return;
+            // In single device mode, the full relativeId IS the subPath (no device prefix)
+            ctx._stateChangePromise = (ctx._stateChangePromise || Promise.resolve()).then(() =>
+                adapterCommands.handleStateChange(this, ctx, relativeId, state)
+            ).catch(e => this.log.error(`Error handling state change for id '${id}' with value '${state.val}': '${e}'`));
+            return;
+        }
+
         const ctx = this.deviceContexts.get(deviceId);
         if (!ctx) {
             return;
@@ -300,10 +312,39 @@ class EcovacsDeebot extends utils.Adapter {
                 
                 this.setStateConditional('info.deviceCount', numberOfDevices, true);
 
-                for (const vacuum of devices) {
+                // Determine which devices to process based on singleDeviceMode config
+                let devicesToProcess = devices;
+                let useSkipPrefix = false;
+                const singleDeviceMode = this.config.singleDeviceMode;
+                const singleDeviceId = this.config.singleDeviceId;
+
+                if (singleDeviceMode && singleDeviceId) {
+                    // Find the matching device by nick, deviceName, or did
+                    const searchTerm = singleDeviceId.toLowerCase();
+                    const matchedDevice = devices.find(d => 
+                        (d.nick && d.nick.toLowerCase() === searchTerm) ||
+                        (d.deviceName && d.deviceName.toLowerCase() === searchTerm) ||
+                        (d.name && d.name.toLowerCase() === searchTerm) ||
+                        (d.did && d.did.toLowerCase() === searchTerm)
+                    );
+
+                    if (matchedDevice) {
+                        const matchName = matchedDevice.nick || matchedDevice.deviceName || matchedDevice.did;
+                        this.log.info(`Single device mode: Using device '${matchName}' (did: ${matchedDevice.did})`);
+                        devicesToProcess = [matchedDevice];
+                        useSkipPrefix = true;
+                    } else {
+                        this.log.warn(`Single device mode: Could not find device matching '${singleDeviceId}'. No devices will be connected.`);
+                        this._connecting = false;
+                        return;
+                    }
+                }
+
+                for (const vacuum of devicesToProcess) {
                     const deviceId = vacuum.did.replace(/[^a-zA-Z0-9_]/g, '_');
                     const vacbot = api.getVacBot(api.uid, EcoVacsAPI.REALM, api.resource, api.user_access_token, vacuum, continent);
-                    const ctx = new DeviceContext(this, deviceId, vacbot, vacuum, this.requestThrottle);
+                    // When in single device mode, skip the deviceId prefix in the object state tree
+                    const ctx = new DeviceContext(this, deviceId, vacbot, vacuum, this.requestThrottle, useSkipPrefix);
                     ctx.vacuum = vacuum;
                     ctx.api = api;
                     ctx.model = new Model(vacbot, this.config);
@@ -891,10 +932,18 @@ class EcovacsDeebot extends utils.Adapter {
             }
             const _dotIdx = stateId.indexOf('.');
             if (_dotIdx > 0) {
-                const _deviceId = stateId.substring(0, _dotIdx);
-                const _cacheCtx = this.deviceContexts.get(_deviceId);
+                let _cacheCtx = null;
+                if (this.config.singleDeviceMode) {
+                    // In single device mode, use the single context for cache lookup
+                    _cacheCtx = this.deviceContexts.values().next().value;
+                } else {
+                    const _deviceId = stateId.substring(0, _dotIdx);
+                    _cacheCtx = this.deviceContexts.get(_deviceId);
+                }
                 if (_cacheCtx && _cacheCtx._stateValues) {
-                    const _cachedVal = _cacheCtx._stateValues.get(stateId.substring(_dotIdx + 1));
+                    // In single device mode, the entire stateId is the cache key
+                    const cacheKey = this.config.singleDeviceMode ? stateId : stateId.substring(_dotIdx + 1);
+                    const _cachedVal = _cacheCtx._stateValues.get(cacheKey);
                     if (_cachedVal === value && !native) {
                         return;
                     }
@@ -911,10 +960,16 @@ class EcovacsDeebot extends utils.Adapter {
                         if (!state || (ack && !state.ack) || (state.val !== value) || native) {
                             this.setState(stateId, value, ack);
                             if (_dotIdx > 0) {
-                                const _deviceId2 = stateId.substring(0, stateId.indexOf('.'));
-                                const _cacheCtx2 = this.deviceContexts.get(_deviceId2);
+                                let _cacheCtx2 = null;
+                                if (this.config.singleDeviceMode) {
+                                    _cacheCtx2 = this.deviceContexts.values().next().value;
+                                } else {
+                                    const _deviceId2 = stateId.substring(0, stateId.indexOf('.'));
+                                    _cacheCtx2 = this.deviceContexts.get(_deviceId2);
+                                }
                                 if (_cacheCtx2 && _cacheCtx2._stateValues) {
-                                    _cacheCtx2._stateValues.set(stateId.substring(stateId.indexOf('.') + 1), value);
+                                    const cacheKey = this.config.singleDeviceMode ? stateId : stateId.substring(stateId.indexOf('.') + 1);
+                                    _cacheCtx2._stateValues.set(cacheKey, value);
                                 }
                             }
                             if (native) {
@@ -942,10 +997,18 @@ class EcovacsDeebot extends utils.Adapter {
             }
             const _dotIdx2 = stateId.indexOf('.');
             if (_dotIdx2 > 0) {
-                const _deviceId2 = stateId.substring(0, _dotIdx2);
-                const _cacheCtx2 = this.deviceContexts.get(_deviceId2);
+                let _cacheCtx2 = null;
+                if (this.config.singleDeviceMode) {
+                    // In single device mode, use the single context for cache lookup
+                    _cacheCtx2 = this.deviceContexts.values().next().value;
+                } else {
+                    const _deviceId2 = stateId.substring(0, _dotIdx2);
+                    _cacheCtx2 = this.deviceContexts.get(_deviceId2);
+                }
                 if (_cacheCtx2 && _cacheCtx2._stateValues) {
-                    const _cachedVal2 = _cacheCtx2._stateValues.get(stateId.substring(_dotIdx2 + 1));
+                    // In single device mode, the entire stateId is the cache key
+                    const cacheKey = this.config.singleDeviceMode ? stateId : stateId.substring(_dotIdx2 + 1);
+                    const _cachedVal2 = _cacheCtx2._stateValues.get(cacheKey);
                     if (_cachedVal2 === value && !native) {
                         return;
                     }
@@ -961,10 +1024,16 @@ class EcovacsDeebot extends utils.Adapter {
             if (!state || (ack && !state.ack) || (state.val !== value) || native) {
                 this.setState(stateId, value, ack);
                 if (_dotIdx2 > 0) {
-                    const _deviceId3 = stateId.substring(0, stateId.indexOf('.'));
-                    const _cacheCtx3 = this.deviceContexts.get(_deviceId3);
+                    let _cacheCtx3 = null;
+                    if (this.config.singleDeviceMode) {
+                        _cacheCtx3 = this.deviceContexts.values().next().value;
+                    } else {
+                        const _deviceId3 = stateId.substring(0, stateId.indexOf('.'));
+                        _cacheCtx3 = this.deviceContexts.get(_deviceId3);
+                    }
                     if (_cacheCtx3 && _cacheCtx3._stateValues) {
-                        _cacheCtx3._stateValues.set(stateId.substring(stateId.indexOf('.') + 1), value);
+                        const cacheKey = this.config.singleDeviceMode ? stateId : stateId.substring(stateId.indexOf('.') + 1);
+                        _cacheCtx3._stateValues.set(cacheKey, value);
                     }
                 }
                 if (native) {
