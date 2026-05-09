@@ -81,7 +81,9 @@ class EcovacsDeebot extends utils.Adapter {
             for (const ctx of this.deviceContexts.values()) {
                 if (ctx.vacbot) {
                     ctx.vacbot.disconnect();
-                    ctx.vacbot.removeAllListeners();
+                    if (typeof ctx.vacbot.removeAllListeners === 'function') {
+                        ctx.vacbot.removeAllListeners();
+                    }
                 }
                 this.stopPolling(ctx);
                 if (ctx.getGetPosInterval) {
@@ -249,7 +251,9 @@ class EcovacsDeebot extends utils.Adapter {
             this.stopPolling(ctx1);
             try {
                 ctx1.vacbot.disconnect();
-                ctx1.vacbot.removeAllListeners();
+                if (typeof ctx1.vacbot.removeAllListeners === 'function') {
+                    ctx1.vacbot.removeAllListeners();
+                }
             } catch (e) {
                 // ignore cleanup errors
             }
