@@ -254,6 +254,7 @@
           "newLine": true,
           "type": "staticText",
           "label": "singleDeviceInfoText",
+          "hidden": "!data.singleDeviceMode",
           "sm": 12,
           "md": 12,
           "lg": 12
@@ -267,7 +268,7 @@
           "lg": 12
         },
         "singleDeviceId": {
-          "type": "selectSendTo",
+          "type": "autocompleteSendTo",
           "newLine": true,
           "sm": 12,
           "md": 12,
@@ -275,8 +276,8 @@
           "label": "singleDeviceId",
           "command": "getDeviceList",
           "noTranslation": true,
-          "manual": true,
-          "defaultFunc": "data.singleDeviceId || ''"
+          "freeSolo": true,
+          "alsoDependsOn": ["singleDeviceMode"]
         },
         "_loginTest": {
           "newLine": true,
