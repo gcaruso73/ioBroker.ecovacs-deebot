@@ -268,18 +268,15 @@
         },
         "singleDeviceId": {
           "type": "selectSendTo",
-          "command": "getDeviceList",
-          "label": "singleDeviceId",
-          "noTranslation": true,
           "newLine": true,
-          "manual": true,
-          "defaultFunc": "data.singleDeviceId || ''",
-          "alsoDependsOn": ["singleDeviceMode"],
-          "noMultiEdit": true,
           "sm": 12,
           "md": 12,
           "lg": 12,
-          "hidden": "!data.singleDeviceMode"
+          "label": "singleDeviceId",
+          "command": "getDeviceList",
+          "noTranslation": true,
+          "manual": true,
+          "defaultFunc": "data.singleDeviceId || ''"
         },
         "_loginTest": {
           "newLine": true,
