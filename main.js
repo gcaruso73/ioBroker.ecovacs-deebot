@@ -81,6 +81,7 @@ class EcovacsDeebot extends utils.Adapter {
             for (const ctx of this.deviceContexts.values()) {
                 if (ctx.vacbot) {
                     ctx.vacbot.disconnect();
+                    ctx.vacbot.removeAllListeners();
                 }
                 this.stopPolling(ctx);
                 if (ctx.getGetPosInterval) {
@@ -95,6 +96,10 @@ class EcovacsDeebot extends utils.Adapter {
                 if (ctx._pendingErrorWriteTimeout) {
                     clearTimeout(ctx._pendingErrorWriteTimeout);
                     ctx._pendingErrorWriteTimeout = null;
+                }
+                if (ctx.commandFailedResetTimeout) {
+                    clearTimeout(ctx.commandFailedResetTimeout);
+                    ctx.commandFailedResetTimeout = null;
                 }
             }
             if (this.globalMqttUnreachableTimeout) {
@@ -221,6 +226,15 @@ class EcovacsDeebot extends utils.Adapter {
         }
         this.setConnection(false);
         for (const ctx1 of this.deviceContexts.values()) {
+            if (ctx1.getGetPosInterval) {
+                clearInterval(ctx1.getGetPosInterval);
+                ctx1.getGetPosInterval = null;
+            }
+            if (ctx1.airDryingActiveInterval) {
+                clearInterval(ctx1.airDryingActiveInterval);
+                ctx1.airDryingActiveInterval = null;
+            }
+            this.stopPolling(ctx1);
             try {
                 ctx1.vacbot.disconnect();
                 ctx1.vacbot.removeAllListeners();
