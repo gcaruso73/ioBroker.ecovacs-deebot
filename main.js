@@ -206,6 +206,7 @@ class EcovacsDeebot extends utils.Adapter {
         const { email, password, countrycode, authDomain } = credentials;
 
         if (!email || !password) {
+            this.log.warn('getDeviceList: email or password missing in request. Check jsonData template resolution.');
             return [];
         }
 
