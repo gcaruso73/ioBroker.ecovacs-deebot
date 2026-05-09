@@ -275,9 +275,9 @@
           "lg": 12,
           "label": "singleDeviceId",
           "command": "getDeviceList",
+          "data": {},
           "noTranslation": true,
-          "freeSolo": true,
-          "alsoDependsOn": ["singleDeviceMode"]
+          "freeSolo": true
         },
         "_loginTest": {
           "newLine": true,

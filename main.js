@@ -118,6 +118,7 @@ class EcovacsDeebot extends utils.Adapter {
     }
 
     async onMessage(obj) {
+        this.log.info(`onMessage received: command=${obj?.command} from=${obj?.from}`);
         if (obj && obj.command === 'loginAndFetchDevices') {
             this.log.info('Received loginAndFetchDevices request from admin interface');
             try {
