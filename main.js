@@ -52,9 +52,12 @@ class EcovacsDeebot extends utils.Adapter {
         this.globalMqttUnreachableCount = 0;
         this.globalMqttOfflineWarningSent = false;
         this.lastMqttOfflineLogTimestamp = 0;
+        this._lastConnectTime = 0;
+        this._startupTime = 0;
     }
 
     async onReady() {
+        this._startupTime = Date.now();
         this.log.info(`EcovacsDeebot onReady: namespace=${this.namespace}, adapter is alive and listening`);
         // Migrate legacy native key that collides with dot-notation unflattening
         await this.migrateNativeConfig();
@@ -316,6 +319,11 @@ class EcovacsDeebot extends utils.Adapter {
             adapterCommands.handleStateChange(this, ctx, subPath, state)
         ).catch(e => this.log.error(`Error handling state change for id '${id}' with value '${state.val}': '${e}'`));
     }    reconnect() {
+        // Prevent reconnect triggered by stale states during adapter startup
+        if (this._startupTime && (Date.now() - this._startupTime < C.STARTUP_GRACE_PERIOD_MS)) {
+            this.log.debug('Reconnect skipped - startup grace period active');
+            return;
+        }
         if (this.authFailed) {
             this.log.warn('Reconnect skipped due to authentication failure. Please check your credentials and restart the adapter.');
             return;
@@ -361,6 +369,11 @@ class EcovacsDeebot extends utils.Adapter {
     async connect() {
         if (this._connecting) {
             this.log.debug('Connection already in progress, skipping concurrent connect()');
+            return;
+        }
+        const connectNow = Date.now();
+        if (this._lastConnectTime && (connectNow - this._lastConnectTime < C.CONNECT_COOLDOWN_MS)) {
+            this.log.debug('Connect skipped - cooldown active (' + Math.round((connectNow - this._lastConnectTime) / 1000) + 's since last connect)');
             return;
         }
         this._connecting = true;
@@ -439,6 +452,7 @@ class EcovacsDeebot extends utils.Adapter {
                     }
                 }
 
+                const readyPromises = [];
                 for (const vacuum of devicesToProcess) {
                     const deviceId = vacuum.did.replace(/[^a-zA-Z0-9_]/g, '_');
                     const vacbot = api.getVacBot(api.uid, EcoVacsAPI.REALM, api.resource, api.user_access_token, vacuum, continent);
@@ -467,7 +481,8 @@ class EcovacsDeebot extends utils.Adapter {
                         this.log.error("Error creating initial objects for " + deviceId + ": " + e.message);
                     }
 
-                    eventHandlers.registerReadyEvent(this, vacbot, ctx, vacuum);
+                    const readyPromise = eventHandlers.registerReadyEvent(this, vacbot, ctx, vacuum);
+                    readyPromises.push(readyPromise);
 
                     eventHandlers.registerChargeStateEvent(this, vacbot, ctx);
 
@@ -583,6 +598,8 @@ class EcovacsDeebot extends utils.Adapter {
                         this.log.debug(`[${ctx.vacuum.nick || ctx.deviceId}] Polling not started - device is disabled`);
                     }
                 }
+            await Promise.all(readyPromises);
+            this._lastConnectTime = Date.now();
             this._connecting = false;
         } catch (e) {
             this._connecting = false;
@@ -713,6 +730,11 @@ class EcovacsDeebot extends utils.Adapter {
         if (this.globalMqttUnreachableTimeout) {
             return;
         }
+        // Prevent reconnect triggered by stale states during adapter startup
+        if (this._startupTime && (Date.now() - this._startupTime < C.STARTUP_GRACE_PERIOD_MS)) {
+            this.log.debug('Reconnect skipped - startup grace period active');
+            return;
+        }
         if (this.authFailed) {
             return;
         }
@@ -787,6 +809,11 @@ class EcovacsDeebot extends utils.Adapter {
             return;
         }
         if (ctx.unreachableRetryTimeout) { return; }
+        // Prevent reconnect triggered by stale states during adapter startup
+        if (this._startupTime && (Date.now() - this._startupTime < C.STARTUP_GRACE_PERIOD_MS)) {
+            this.log.debug('Reconnect skipped - startup grace period active');
+            return;
+        }
         if (this.authFailed) { return; }
 
         // Backoff schedule: 30s, 60s, then 5min for all subsequent retries

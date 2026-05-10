@@ -66,8 +66,8 @@ describe('constants.js', () => {
         expect(C.FORMATTED_DATE_THROTTLE_S).to.equal(60);
     });
 
-    it('should have exactly 15 exported constants', () => {
-        expect(Object.keys(C)).to.have.lengthOf(15);
+    it('should have exactly 17 exported constants', () => {
+        expect(Object.keys(C)).to.have.lengthOf(17);
     });
 
     it('all delay constants should be positive', () => {
