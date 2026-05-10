@@ -38,7 +38,7 @@
   "account": "Konto",
   "experimental": "Experimentell",
   "authDomain": "Anmeldedomäne",
-  "_loginTest": "Anmelden & Verbindung testen",
+  "loginTest": "Anmelden & Verbindung testen",
   "resultSuccess": "Anmeldung erfolgreich",
   "errorLogin": "Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Anmeldedaten.",
   "allDevicesInfo": "Alle in Ihrem Konto gefundenen Geräte werden automatisch verwaltet.",

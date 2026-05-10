@@ -38,7 +38,7 @@
   "account": "Account",
   "experimental": "Experimental",
   "authDomain": "Login domain",
-  "_loginTest": "Login & Test Connection",
+  "loginTest": "Test login",
   "resultSuccess": "Login successful",
   "errorLogin": "Login failed. Please check your credentials.",
   "allDevicesInfo": "All devices found on your account will be managed automatically.",

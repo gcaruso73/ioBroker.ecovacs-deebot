@@ -38,7 +38,7 @@
   "account": "Account",
   "experimental": "Sperimentale",
   "authDomain": "Dominio di accesso",
-  "_loginTest": "Accesso e test connessione",
+  "loginTest": "Accesso e test connessione",
   "resultSuccess": "Accesso riuscito",
   "errorLogin": "Accesso fallito. Controlla le tue credenziali.",
   "allDevicesInfo": "Tutti i dispositivi trovati sul tuo account verranno gestiti automaticamente.",

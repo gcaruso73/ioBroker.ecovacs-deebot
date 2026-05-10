@@ -38,7 +38,7 @@
   "account": "Konto",
   "experimental": "Eksperymentalne",
   "authDomain": "Domena logowania",
-  "_loginTest": "Zaloguj i przetestuj połączenie",
+  "loginTest": "Zaloguj i przetestuj połączenie",
   "resultSuccess": "Logowanie powiodło się",
   "errorLogin": "Logowanie nie powiodło się. Sprawdź dane uwierzytelniające.",
   "allDevicesInfo": "Wszystkie urządzenia na koncie będą zarządzane automatycznie.",

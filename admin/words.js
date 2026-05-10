@@ -210,6 +210,19 @@ systemDictionary = {
         "de": "Pause",
         "ru": "пауза"
     },
+    "loginTest": {
+        "en": "Test login",
+        "de": "Anmelden & Verbindung testen",
+        "ru": "Войти и проверить подключение",
+        "pt": "Login e teste de conexão",
+        "nl": "Aanmelden en verbinding testen",
+        "fr": "Connexion et test de connexion",
+        "it": "Accesso e test connessione",
+        "es": "Iniciar sesión y probar conexión",
+        "pl": "Zaloguj i przetestuj połączenie",
+        "uk": "Увійти та перевірити підключення",
+        "zh-cn": "登录并测试连接"
+    },
     "stop": {
         "en": "stop",
         "de": "Stop",

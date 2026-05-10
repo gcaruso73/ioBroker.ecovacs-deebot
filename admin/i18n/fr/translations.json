@@ -38,7 +38,7 @@
   "account": "Compte",
   "experimental": "Expérimental",
   "authDomain": "Domaine de connexion",
-  "_loginTest": "Connexion et test de connexion",
+  "loginTest": "Connexion et test de connexion",
   "resultSuccess": "Connexion réussie",
   "errorLogin": "Échec de la connexion. Veuillez vérifier vos identifiants.",
   "allDevicesInfo": "Tous les appareils trouvés sur votre compte seront gérés automatiquement.",

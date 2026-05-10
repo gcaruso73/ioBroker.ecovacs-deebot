@@ -38,7 +38,7 @@
   "account": "Cuenta",
   "experimental": "Experimental",
   "authDomain": "Dominio de inicio de sesión",
-  "_loginTest": "Iniciar sesión y probar conexión",
+  "loginTest": "Iniciar sesión y probar conexión",
   "resultSuccess": "Inicio de sesión exitoso",
   "errorLogin": "Error de inicio de sesión. Verifique sus credenciales.",
   "allDevicesInfo": "Todos los dispositivos en su cuenta se gestionarán automáticamente.",

@@ -283,7 +283,7 @@
         "_loginTest": {
           "newLine": true,
           "type": "sendTo",
-          "label": "_loginTest",
+          "label": "loginTest",
           "command": "loginAndFetchDevices",
           "showProcess": true,
           "sm": 12,

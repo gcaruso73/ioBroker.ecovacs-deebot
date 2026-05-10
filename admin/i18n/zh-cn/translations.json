@@ -38,7 +38,7 @@
   "account": "账户",
   "experimental": "实验性",
   "authDomain": "登录域",
-  "_loginTest": "登录并测试连接",
+  "loginTest": "登录并测试连接",
   "resultSuccess": "登录成功",
   "errorLogin": "登录失败。请检查账号密码。",
   "allDevicesInfo": "账户下所有设备将自动管理。",

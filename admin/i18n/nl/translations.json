@@ -38,7 +38,7 @@
   "account": "Account",
   "experimental": "Experimenteel",
   "authDomain": "Aanmeldingsdomein",
-  "_loginTest": "Aanmelden en verbinding testen",
+  "loginTest": "Aanmelden en verbinding testen",
   "resultSuccess": "Aanmelding succesvol",
   "errorLogin": "Aanmelding mislukt. Controleer uw inloggegevens.",
   "allDevicesInfo": "Alle apparaten die op uw account zijn gevonden worden automatisch beheerd.",
