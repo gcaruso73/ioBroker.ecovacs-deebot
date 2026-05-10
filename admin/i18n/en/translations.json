@@ -41,7 +41,7 @@
   "loginTest": "Test login",
   "resultSuccess": "Login successful",
   "errorLogin": "Login failed. Please check your credentials.",
-  "allDevicesInfo": "All devices found on your account will be managed automatically.",
+  "allDevicesInfo": "All enabled/activated devices found on your account will be managed automatically.",
   "enableKeepAll": "Enable (keep all files)",
   "enableKeepLatest": "Enable (keep latest only)",
   "feature.consumable.airFreshener": "Create state for Air Freshener life span component (\"consumable.airFreshener\")",
