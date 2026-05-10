@@ -229,6 +229,7 @@ function createMockAdapter(overrides = {}) {
         getChannelsOfAsync: sinon.stub().resolves([]),
 
         // Utility
+        clearGoToPosition: sinon.stub(),
         getCurrentDateAndTimeFormatted: sinon.stub().returns('2023.01.01 12:00:00'),
         getHoursUntilDustBagEmptyReminderFlagIsSet: sinon.stub().returns(0),
         getConfigValue: sinon.stub().returns(true),
@@ -313,6 +314,7 @@ function createMockCtx(overrides = {}) {
         connected: false,
         connectionFailed: false,
         connectedTimestamp: 0,
+        enabled: true,
         retries: 0,
         retrypauseTimeout: null,
         unreachableWarningSent: false,

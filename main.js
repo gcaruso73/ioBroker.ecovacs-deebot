@@ -272,7 +272,21 @@ class EcovacsDeebot extends utils.Adapter {
         if (this.config.singleDeviceMode) {
             const ctx = this.deviceContexts.values().next().value;
             if (!ctx) return;
-            // In single device mode, the full relativeId IS the subPath (no device prefix)
+            const stateName = parts[parts.length - 1];
+            const subPath = relativeId;
+            if (stateName === 'enabled' && subPath === 'status.enabled') {
+                ctx.enabled = state.val;
+                if (state.val) {
+                    this.log.info(`Device control and updates enabled`);
+                    if (ctx.connected) {
+                        this.startPolling(ctx);
+                    }
+                } else {
+                    this.log.info(`Device control and updates disabled`);
+                    this.stopPolling(ctx);
+                }
+            }
+            if (!ctx.enabled && stateName !== 'enabled') return;
             ctx._stateChangePromise = (ctx._stateChangePromise || Promise.resolve()).then(() =>
                 adapterCommands.handleStateChange(this, ctx, relativeId, state)
             ).catch(e => this.log.error(`Error handling state change for id '${id}' with value '${state.val}': '${e}'`));
@@ -284,12 +298,24 @@ class EcovacsDeebot extends utils.Adapter {
             return;
         }
         const subPath = parts.slice(1).join('.');
+        const stateName = parts[parts.length - 1];
+        if (stateName === 'enabled' && subPath === 'status.enabled') {
+            ctx.enabled = state.val;
+            if (state.val) {
+                this.log.info(`Device ${deviceId}: control and updates enabled`);
+                if (ctx.connected) {
+                    this.startPolling(ctx);
+                }
+            } else {
+                this.log.info(`Device ${deviceId}: control and updates disabled`);
+                this.stopPolling(ctx);
+            }
+        }
+        if (!ctx.enabled && stateName !== 'enabled') return;
         ctx._stateChangePromise = (ctx._stateChangePromise || Promise.resolve()).then(() =>
             adapterCommands.handleStateChange(this, ctx, subPath, state)
         ).catch(e => this.log.error(`Error handling state change for id '${id}' with value '${state.val}': '${e}'`));
-    }
-
-    reconnect() {
+    }    reconnect() {
         if (this.authFailed) {
             this.log.warn('Reconnect skipped due to authentication failure. Please check your credentials and restart the adapter.');
             return;
@@ -425,6 +451,16 @@ class EcovacsDeebot extends utils.Adapter {
                     this.deviceContexts.set(deviceId, ctx);
 
                     try {
+                        const enabledState = await this.getStateAsync(ctx.statePath('status.enabled'));
+                        if (enabledState && enabledState.val !== null && enabledState.val !== undefined && enabledState.val === false) {
+                            ctx.enabled = false;
+                            this.log.debug(`${deviceId}: Device is disabled (status.enabled=false persisted)`);
+                        }
+                    } catch (e) {
+                        this.log.debug(`${deviceId}: Could not read status.enabled state, defaulting to enabled: ${e.message}`);
+                    }
+
+                    try {
                         await adapterObjects.createInitialInfoObjects(this, ctx);
                         await adapterObjects.createInitialObjects(this, ctx);
                     } catch (e) {
@@ -541,7 +577,11 @@ class EcovacsDeebot extends utils.Adapter {
                     }
 
                     // Start fixed-interval polling
-                    this.startPolling(ctx);
+                    if (ctx.enabled) {
+                        this.startPolling(ctx);
+                    } else {
+                        this.log.debug(`[${ctx.vacuum.nick || ctx.deviceId}] Polling not started - device is disabled`);
+                    }
                 }
             this._connecting = false;
         } catch (e) {
@@ -1167,9 +1207,9 @@ class EcovacsDeebot extends utils.Adapter {
 
     vacbotGetStatesInterval(ctx) {
         // Skip polling when global MQTT unreachable or device not connected
-        if (this.globalMqttUnreachable || ctx.connectionFailed || !ctx.connected) {
+        if (this.globalMqttUnreachable || ctx.connectionFailed || !ctx.connected || !ctx.enabled) {
             const nick = ctx.vacuum.nick || ctx.deviceId;
-            this.log.debug(`[${nick}] Skipping polling interval - device unreachable (connectionFailed=${ctx.connectionFailed}, connected=${ctx.connected})`);
+            this.log.debug(`[${nick}] Skipping polling interval - device unreachable (connectionFailed=${ctx.connectionFailed}, connected=${ctx.connected}, enabled=${ctx.enabled})`);
             return;
         }
         ctx.intervalQueue.addStandardGetCommands();
@@ -1183,7 +1223,7 @@ class EcovacsDeebot extends utils.Adapter {
         }
         const interval = Math.max(this.pollingInterval, C.MIN_POLLING_INTERVAL_MS);
         ctx._autoUpdateInterval = setInterval(() => {
-            if (this.globalMqttUnreachable || ctx.connectionFailed || !ctx.connected) {
+            if (this.globalMqttUnreachable || ctx.connectionFailed || !ctx.connected || !ctx.enabled) {
                 return;
             }
             this.vacbotGetStatesInterval(ctx);
