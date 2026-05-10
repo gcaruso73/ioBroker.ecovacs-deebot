@@ -25,6 +25,7 @@ class EcovacsDeebot extends utils.Adapter {
                 }
             )
         );
+        this._deviceConnectionTimeout = null;
 
         this.on('ready', this.onReady.bind(this));
         this.on('stateChange', this.onStateChange.bind(this));
@@ -113,10 +114,18 @@ class EcovacsDeebot extends utils.Adapter {
                     clearTimeout(ctx.commandFailedResetTimeout);
                     ctx.commandFailedResetTimeout = null;
                 }
+                if (ctx.unreachableRetryTimeout) {
+                    clearTimeout(ctx.unreachableRetryTimeout);
+                    ctx.unreachableRetryTimeout = null;
+                }
             }
             if (this.globalMqttUnreachableTimeout) {
                 clearTimeout(this.globalMqttUnreachableTimeout);
                 this.globalMqttUnreachableTimeout = null;
+            }
+            if (this._deviceConnectionTimeout) {
+                clearTimeout(this._deviceConnectionTimeout);
+                this._deviceConnectionTimeout = null;
             }
             this.deviceContexts.clear();
             this.log.info('cleaned everything up...');
@@ -319,7 +328,6 @@ class EcovacsDeebot extends utils.Adapter {
             adapterCommands.handleStateChange(this, ctx, subPath, state)
         ).catch(e => this.log.error(`Error handling state change for id '${id}' with value '${state.val}': '${e}'`));
     }    reconnect() {
-        // Prevent reconnect triggered by stale states during adapter startup
         if (this._startupTime && (Date.now() - this._startupTime < C.STARTUP_GRACE_PERIOD_MS)) {
             this.log.debug('Reconnect skipped - startup grace period active');
             return;
@@ -329,7 +337,6 @@ class EcovacsDeebot extends utils.Adapter {
             return;
         }
         const now = Date.now();
-        // Increased cooldown to 60s to prevent rapid reconnection loops
         if (this._lastReconnectTime && (now - this._lastReconnectTime < C.RECONNECT_COOLDOWN_MS)) {
             this.log.debug('Reconnect skipped - cooldown active (' + Math.round((now - this._lastReconnectTime) / 1000) + 's since last reconnect, minimum 60s)');
             return;
@@ -353,15 +360,21 @@ class EcovacsDeebot extends utils.Adapter {
             }
             this.stopPolling(ctx1);
             try {
-                ctx1.vacbot.disconnect();
-                if (typeof ctx1.vacbot.removeAllListeners === 'function') {
-                    ctx1.vacbot.removeAllListeners();
+                if (ctx1.vacbot) {
+                    ctx1.vacbot.disconnect();
+                    if (typeof ctx1.vacbot.removeAllListeners === 'function') {
+                        ctx1.vacbot.removeAllListeners();
+                    }
                 }
             } catch (e) {
                 // ignore cleanup errors
             }
         }
         this.deviceContexts.clear();
+        if (this._deviceConnectionTimeout) {
+            clearTimeout(this._deviceConnectionTimeout);
+            this._deviceConnectionTimeout = null;
+        }
         this.log.info('Reconnecting ...');
         this.connect();
     }
@@ -378,6 +391,7 @@ class EcovacsDeebot extends utils.Adapter {
         }
         this._connecting = true;
         this.connectionFailed = false;
+        this._lastConnectTime = connectNow;
 
         if ((!this.config.email) || (!this.config.password) || (!this.config.countrycode)) {
             this.error('Missing values in adapter config', true);
@@ -396,210 +410,102 @@ class EcovacsDeebot extends utils.Adapter {
             let authDomain = '';
             if (this.getConfigValue('authDomain') !== '') {
                 authDomain = this.getConfigValue('authDomain');
-                this.log.info(`Using login: ${authDomain}`);
+                this.log.info('Using login: ' + authDomain);
             }
 
             const api = new EcoVacsAPI(deviceId, this.config.countrycode, continent, authDomain);
             await api.connect(this.config.email, password_hash);
             const devices = await api.devices();
 
-                const numberOfDevices = Object.keys(devices).length;
-                if (numberOfDevices === 0) {
-                    this.log.warn('Successfully connected to Ecovacs server, but no devices found. Exiting ...');
-                    this.setConnection(false);
+            const numberOfDevices = Object.keys(devices).length;
+            if (numberOfDevices === 0) {
+                this.log.warn('Successfully connected to Ecovacs server, but no devices found. Exiting ...');
+                this.setConnection(false);
+                this._connecting = false;
+                return;
+            }
+            this.log.info('Successfully connected to Ecovacs server. Found ' + numberOfDevices + ' device(s) ...');
+            this.setStateConditional('info.deviceDiscovery', JSON.stringify(devices.map((device, index) => ({
+                number: index + 1,
+                name: device.deviceName || device.name || 'Unknown Device',
+                nick: device.nick || '',
+                did: device.did || '',
+                class: device.class,
+                deviceType: this.getDeviceTypeFromDevice(device)
+            }))), true);
+            this.setStateConditional('info.deviceCount', numberOfDevices, true);
+
+            let devicesToProcess = devices;
+            let useSkipPrefix = false;
+            const singleDeviceMode = this.config.singleDeviceMode;
+            const singleDeviceId = this.config.singleDeviceId;
+
+            if (singleDeviceMode && singleDeviceId) {
+                const searchTerm = singleDeviceId.toLowerCase();
+                const matchedDevice = devices.find(d => 
+                    (d.did && d.did.toLowerCase() === searchTerm) ||
+                    (d.nick && d.nick.toLowerCase() === searchTerm) ||
+                    (d.deviceName && d.deviceName.toLowerCase() === searchTerm) ||
+                    (d.name && d.name.toLowerCase() === searchTerm)
+                );
+
+                if (matchedDevice) {
+                    const matchName = matchedDevice.nick || matchedDevice.deviceName || matchedDevice.did;
+                    this.log.info('Single device mode: Using device ' + matchName + ' (did: ' + matchedDevice.did + ')');
+                    devicesToProcess = [matchedDevice];
+                    useSkipPrefix = true;
+                } else {
+                    this.log.warn('Single device mode: Could not find device matching ' + singleDeviceId + '. No devices will be connected.');
+                    this._connecting = false;
                     return;
                 }
-                this.log.info(`Successfully connected to Ecovacs server. Found ${numberOfDevices} device(s) ...`);
-                this.log.debug(`Devices: ${JSON.stringify(devices)}`);
-                
-                const discoveryInfo = devices.map((device, index) => ({
-                    number: index + 1,
-                    name: device.deviceName || device.name || 'Unknown Device',
-                    nick: device.nick || '',
-                    did: device.did || '',
-                    class: device.class,
-                    deviceType: this.getDeviceTypeFromDevice(device)
-                }));
-                this.setStateConditional('info.deviceDiscovery', JSON.stringify(discoveryInfo), true);
-                
-                this.setStateConditional('info.deviceCount', numberOfDevices, true);
+            }
 
-                // Determine which devices to process based on singleDeviceMode config
-                let devicesToProcess = devices;
-                let useSkipPrefix = false;
-                const singleDeviceMode = this.config.singleDeviceMode;
-                const singleDeviceId = this.config.singleDeviceId;
-
-                if (singleDeviceMode && singleDeviceId) {
-                    // Find the matching device by nick, deviceName, or did
-                    const searchTerm = singleDeviceId.toLowerCase();
-                    const matchedDevice = devices.find(d => 
-                        (d.nick && d.nick.toLowerCase() === searchTerm) ||
-                        (d.deviceName && d.deviceName.toLowerCase() === searchTerm) ||
-                        (d.name && d.name.toLowerCase() === searchTerm) ||
-                        (d.did && d.did.toLowerCase() === searchTerm)
-                    );
-
-                    if (matchedDevice) {
-                        const matchName = matchedDevice.nick || matchedDevice.deviceName || matchedDevice.did;
-                        this.log.info(`Single device mode: Using device '${matchName}' (did: ${matchedDevice.did})`);
-                        devicesToProcess = [matchedDevice];
-                        useSkipPrefix = true;
-                    } else {
-                        this.log.warn(`Single device mode: Could not find device matching '${singleDeviceId}'. No devices will be connected.`);
-                        this._connecting = false;
-                        return;
-                    }
+            for (let i = 0; i < devicesToProcess.length; i++) {
+                const vacuum = devicesToProcess[i];
+                const deviceId = vacuum.did.replace(/[^a-zA-Z0-9_]/g, '_');
+                if (this.deviceContexts.has(deviceId)) {
+                    this.log.debug('[' + deviceId + '] Device already connected, skipping');
+                    continue;
                 }
-
-                const readyPromises = [];
-                for (const vacuum of devicesToProcess) {
-                    const deviceId = vacuum.did.replace(/[^a-zA-Z0-9_]/g, '_');
-                    const vacbot = api.getVacBot(api.uid, EcoVacsAPI.REALM, api.resource, api.user_access_token, vacuum, continent);
-                    // When in single device mode, skip the deviceId prefix in the object state tree
-                    const ctx = new DeviceContext(this, deviceId, vacbot, vacuum, this.requestThrottle, useSkipPrefix);
-                    ctx.vacuum = vacuum;
-                    ctx.api = api;
-                    ctx.model = new Model(vacbot, this.config);
-                    ctx.device = new Device(ctx);
-                    this.deviceContexts.set(deviceId, ctx);
-
-                    try {
-                        const enabledState = await this.getStateAsync(ctx.statePath('status.enabled'));
-                        if (enabledState && enabledState.val !== null && enabledState.val !== undefined && enabledState.val === false) {
-                            ctx.enabled = false;
-                            this.log.debug(`${deviceId}: Device is disabled (status.enabled=false persisted)`);
-                        }
-                    } catch (e) {
-                        this.log.debug(`${deviceId}: Could not read status.enabled state, defaulting to enabled: ${e.message}`);
-                    }
-
-                    try {
-                        await adapterObjects.createInitialInfoObjects(this, ctx);
-                        await adapterObjects.createInitialObjects(this, ctx);
-                    } catch (e) {
-                        this.log.error("Error creating initial objects for " + deviceId + ": " + e.message);
-                    }
-
-                    const readyPromise = eventHandlers.registerReadyEvent(this, vacbot, ctx, vacuum);
-                    readyPromises.push(readyPromise);
-
-                    eventHandlers.registerChargeStateEvent(this, vacbot, ctx);
-
-                    eventHandlers.registerCleanReportEvent(this, vacbot, ctx);
-
-                    eventHandlers.registerWaterCleaningEvents(this, vacbot, ctx);
-                    eventHandlers.registerStationEvents(this, vacbot, ctx);
-
-                    eventHandlers.registerMiscEventHandlers(this, vacbot, ctx);
-                    eventHandlers.registerConsumableEvents(this, vacbot, ctx);
-                    eventHandlers.registerConnectionEvents(this, vacbot, ctx);
-                    eventHandlers.registerMapEvents(this, vacbot, ctx);
-                    eventHandlers.registerAirbotEvents(this, vacbot, ctx);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                    // ==================================
-                    // OTA / Firmware Update Status
-                    // ==================================
-
-
-                    /**
-                     * @deprecated
-                     */
-                    if ((!ctx.getGetPosInterval) && ctx.getModel().usesXmpp()) {
-                        if ((ctx.getModel().isSupportedFeature('map.deebotPosition'))) {
-                            ctx.getGetPosInterval = setInterval(() => {
-                                if (ctx.getDevice().isCleaning() || ctx.getDevice().isReturning()) {
-                                    vacbot.run('GetPosition');
-                                }
-                            }, 3000);
-                        }
-                    }
-
-                    // ==================================
-                    // AIRBOT Z1 / Z1 Air Quality Monitor
-                    // ==================================
-
-
-
-
-
-
-
-
-
-
-
-                    // ==================
-                    // Library connection
-                    // ==================
-
-
-
-
-                    // Skip connecting this device if MQTT server is known to be unreachable
-                    // The global retry mechanism will connect all devices when server is back
-                    if (this.globalMqttUnreachable) {
-                        this.log.debug(`${ctx.deviceId}] Skipping vacbot.connect() - MQTT server globally unreachable`);
-                    } else {
-                        vacbot.connect();
-                    }
-
-                    // Start fixed-interval polling
-                    if (ctx.enabled) {
-                        this.startPolling(ctx);
-                    } else {
-                        this.log.debug(`[${ctx.vacuum.nick || ctx.deviceId}] Polling not started - device is disabled`);
-                    }
+                const vacbot = api.getVacBot(api.uid, EcoVacsAPI.REALM, api.resource, api.user_access_token, vacuum, continent);
+                const ctx = new DeviceContext(this, deviceId, vacbot, vacuum, this.requestThrottle, useSkipPrefix);
+                ctx.vacuum = vacuum; ctx.api = api; ctx.model = new Model(vacbot, this.config); ctx.device = new Device(ctx);
+                this.deviceContexts.set(deviceId, ctx);
+                try {
+                    const enabledState = await this.getStateAsync(ctx.statePath('status.enabled'));
+                    if (enabledState && enabledState.val === false) ctx.enabled = false;
+                } catch (e) {}
+                try {
+                    await adapterObjects.createInitialInfoObjects(this, ctx);
+                    await adapterObjects.createInitialObjects(this, ctx);
+                } catch (e) {
+                    this.log.error('Error creating initial objects for ' + deviceId + ': ' + e.message);
                 }
-            await Promise.all(readyPromises);
-            this._lastConnectTime = Date.now();
+                const readyPromise = eventHandlers.registerReadyEvent(this, vacbot, ctx, vacuum);
+                eventHandlers.registerChargeStateEvent(this, vacbot, ctx);
+                eventHandlers.registerCleanReportEvent(this, vacbot, ctx);
+                eventHandlers.registerWaterCleaningEvents(this, vacbot, ctx);
+                eventHandlers.registerStationEvents(this, vacbot, ctx);
+                eventHandlers.registerMiscEventHandlers(this, vacbot, ctx);
+                eventHandlers.registerConsumableEvents(this, vacbot, ctx);
+                eventHandlers.registerConnectionEvents(this, vacbot, ctx);
+                eventHandlers.registerMapEvents(this, vacbot, ctx);
+                eventHandlers.registerAirbotEvents(this, vacbot, ctx);
+                if (this.globalMqttUnreachable) {
+                    this.log.debug(ctx.deviceId + '] Skipping vacbot.connect() - MQTT server globally unreachable');
+                } else {
+                    vacbot.connect();
+                }
+                if (ctx.enabled) this.startPolling(ctx);
+                await readyPromise;
+                if (i < devicesToProcess.length - 1) {
+                    this.log.info('Staggering next device connection in ' + (C.DEVICE_CONNECTION_DELAY_MS / 1000) + 's...');
+                    await new Promise(resolve => {
+                        this._deviceConnectionTimeout = setTimeout(resolve, C.DEVICE_CONNECTION_DELAY_MS);
+                    });
+                }
+            }
             this._connecting = false;
         } catch (e) {
             this._connecting = false;
