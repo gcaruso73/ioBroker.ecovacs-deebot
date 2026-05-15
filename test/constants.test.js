@@ -66,8 +66,12 @@ describe('constants.js', () => {
         expect(C.FORMATTED_DATE_THROTTLE_S).to.equal(60);
     });
 
-    it('should have exactly 17 exported constants', () => {
-        expect(Object.keys(C)).to.have.lengthOf(17);
+    it('READY_DEBOUNCE_MS should be a positive number', () => {
+        expect(C.READY_DEBOUNCE_MS).to.be.a('number').and.to.be.greaterThan(0);
+    });
+
+    it('should have exactly 19 exported constants', () => {
+        expect(Object.keys(C)).to.have.lengthOf(19);
     });
 
     it('all delay constants should be positive', () => {
@@ -78,7 +82,7 @@ describe('constants.js', () => {
             'RECOVERY_REFETCH_DELAY_MS', 'ERROR_WRITE_DEBOUNCE_MS',
             'RECONNECT_COOLDOWN_MS', 'AIR_DRYING_RESET_DELAY_MS',
             'AIR_DRYING_INTERVAL_MS', 'MIN_POLLING_INTERVAL_MS',
-            'FORMATTED_DATE_THROTTLE_S'
+            'FORMATTED_DATE_THROTTLE_S', 'READY_DEBOUNCE_MS'
         ].forEach(key => {
             expect(C[key], key + ' should be > 0').to.be.greaterThan(0);
         });

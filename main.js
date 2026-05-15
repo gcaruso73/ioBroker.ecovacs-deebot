@@ -118,6 +118,13 @@ class EcovacsDeebot extends utils.Adapter {
                     clearTimeout(ctx.unreachableRetryTimeout);
                     ctx.unreachableRetryTimeout = null;
                 }
+                // Tracked init-get-states timer (set by registerReadyEvent).
+                // Must be cleared so a delayed initial command burst cannot
+                // fire after the adapter has been unloaded.
+                if (ctx._initialGetStatesTimeout) {
+                    clearTimeout(ctx._initialGetStatesTimeout);
+                    ctx._initialGetStatesTimeout = null;
+                }
             }
             if (this.globalMqttUnreachableTimeout) {
                 clearTimeout(this.globalMqttUnreachableTimeout);
@@ -357,6 +364,13 @@ class EcovacsDeebot extends utils.Adapter {
             if (ctx1.airDryingActiveInterval) {
                 clearInterval(ctx1.airDryingActiveInterval);
                 ctx1.airDryingActiveInterval = null;
+            }
+            // Tracked init-get-states timer (set by registerReadyEvent).
+            // Must be cleared so a delayed initial command burst cannot
+            // fire against a stale ctx after we recreate everything.
+            if (ctx1._initialGetStatesTimeout) {
+                clearTimeout(ctx1._initialGetStatesTimeout);
+                ctx1._initialGetStatesTimeout = null;
             }
             this.stopPolling(ctx1);
             try {
@@ -656,16 +670,30 @@ class EcovacsDeebot extends utils.Adapter {
             this.globalMqttUnreachableTimeout = null;
             this.log.debug(`[Global] Executing global MQTT reconnect attempt #${this.globalMqttUnreachableCount}`);
 
-            // Try to reconnect ALL devices
+            // Try to reconnect ALL devices.
+            //
+            // IMPORTANT: vacbot.connect() in the upstream ecovacs-deebot
+            // library does NOT close the previous MQTT client - it just
+            // overwrites this.client with a new one, leaking the old client.
+            // Each leaked client keeps subscribing/emitting 'ready' on its
+            // own auto-reconnects, multiplying load over time.
+            //
+            // We therefore explicitly disconnect first, swallowing any error
+            // (a not-yet-subscribed client will reject from disconnect()),
+            // and only then re-issue connect().
             let reconnectCount = 0;
             for (const deviceCtx of this.deviceContexts.values()) {
-                try {
-                    if (!deviceCtx.connected || deviceCtx.connectionFailed) {
-                        deviceCtx.vacbot.connect();
+                if (!deviceCtx.connected || deviceCtx.connectionFailed) {
+                    // Per-device error containment: a sync throw from
+                    // _reconnectVacbotSafely (which re-throws connect()
+                    // failures) must NOT abort the iteration over the
+                    // remaining devices.
+                    try {
+                        this._reconnectVacbotSafely(deviceCtx, '[Global] ');
                         reconnectCount++;
+                    } catch (e) {
+                        this.log.debug(`[Global] Reconnect failed for ${deviceCtx.deviceId}: ${e && e.message}`);
                     }
-                } catch (e) {
-                    this.log.debug(`[Global] Reconnect failed for ${deviceCtx.deviceId}: ${e.message}`);
                 }
             }
 
@@ -737,12 +765,52 @@ class EcovacsDeebot extends utils.Adapter {
             const retryModel = ctx.getModel().getProductName();
             this.log.debug(`[${retryNick} (${retryModel})] Executing reconnect attempt #${ctx.unreachableRetryCount}`);
             try {
-                ctx.vacbot.connect();
+                // See _reconnectVacbotSafely for why we disconnect first.
+                this._reconnectVacbotSafely(ctx, `[${retryNick} (${retryModel})] `);
             } catch (e) {
                 this.log.warn(`[${retryNick} (${retryModel})] Reconnect failed: ${e.message}`);
                 this.scheduleUnreachableRetry(ctx);
             }
         }, delay);
+    }
+
+    /**
+     * Cleanly reconnect a vacbot's MQTT client.
+     *
+     * The upstream ecovacs-deebot library's vacbot.connect() always creates
+     * a new internal MQTT client and overwrites the previous reference
+     * without disconnecting it. Without an explicit disconnect, repeated
+     * retry paths (per-device or global) accumulate parallel MQTT clients,
+     * each subscribing and re-emitting 'ready' on every auto-reconnect.
+     * Over days of uptime this manifests as multiple simultaneous device
+     * (re-)initializations and a flood of polling commands.
+     *
+     * This helper performs disconnect() first (best-effort - errors are
+     * intentionally swallowed because a not-yet-fully-subscribed client
+     * will reject from disconnect()) and then issues connect().
+     *
+     * @param {object} ctx        - DeviceContext
+     * @param {string} [logPrefix] - prefix for debug logs
+     */
+    _reconnectVacbotSafely(ctx, logPrefix) {
+        const prefix = logPrefix || '';
+        if (!ctx || !ctx.vacbot) return;
+        try {
+            const result = ctx.vacbot.disconnect && ctx.vacbot.disconnect();
+            if (result && typeof result.then === 'function') {
+                result.catch(e => {
+                    this.log.silly(`${prefix}disconnect() before reconnect rejected: ${e && e.message}`);
+                });
+            }
+        } catch (e) {
+            this.log.silly(`${prefix}disconnect() before reconnect threw: ${e && e.message}`);
+        }
+        try {
+            ctx.vacbot.connect();
+        } catch (e) {
+            this.log.debug(`${prefix}connect() failed: ${e && e.message}`);
+            throw e;
+        }
     }
 
     clearUnreachableRetry(ctx) {
