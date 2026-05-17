@@ -41,7 +41,7 @@ describe('adapterQueue.js - advanced edge cases', () => {
         ctx.cleaningLogAcknowledged = false;
         ctx.silentApproach = { mapSpotAreaID: null };
         ctx.adapter.currentSpotAreaID = 'unknown';
-        ctx.adapter.getDevice = sinon.stub().returns({ isCleaning: sinon.stub().returns(false) });
+        ctx.getDevice().isCleaning.returns(false);
     });
 
     describe('startNextItemFromQueue - connectionFailed', () => {

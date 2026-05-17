@@ -43,10 +43,8 @@ describe('adapterQueue.js - feature branches', () => {
         const q = new Queue(ctx, 'testQueue', 500);
         q.add = sinon.stub();
 
-        // The real queue uses this.adapter = ctx.adapter, but the adapter mock
-        // doesn't have currentSpotAreaID/getDevice. Add them for tests that need them.
         q.adapter.currentSpotAreaID = 'unknown';
-        q.adapter.getDevice = sinon.stub().returns({ isCleaning: sinon.stub().returns(false) });
+        q.ctx.getDevice().isCleaning.returns(false);
 
         return { ctx, queue: q };
     }
@@ -145,7 +143,7 @@ describe('adapterQueue.js - feature branches', () => {
         it('should add GetNetInfo when wifiSignal supported and device is cleaning', () => {
             const { queue } = createQueueWithModel();
             queue.ctx.getModel().isSupportedFeature.withArgs('info.network.wifiSignal').returns(true);
-            queue.adapter.getDevice = sinon.stub().returns({ isCleaning: sinon.stub().returns(true) });
+            queue.ctx.getDevice().isCleaning.returns(true);
             queue.addAdditionalGetCommands();
             expect(queue.add.calledWith('GetNetInfo')).to.be.true;
         });
@@ -154,7 +152,7 @@ describe('adapterQueue.js - feature branches', () => {
             const { queue } = createQueueWithModel();
             queue.ctx.cleaningLogAcknowledged = false;
             const addGetCleanLogsStub = sinon.stub(queue, 'addGetCleanLogs');
-            queue.adapter.getDevice = sinon.stub().returns({ isCleaning: sinon.stub().returns(false) });
+            queue.ctx.getDevice().isCleaning.returns(false);
             queue.addAdditionalGetCommands();
             expect(addGetCleanLogsStub.called).to.be.true;
             addGetCleanLogsStub.restore();

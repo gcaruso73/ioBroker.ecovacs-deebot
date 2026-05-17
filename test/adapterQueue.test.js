@@ -54,7 +54,7 @@ describe('adapterQueue.js', () => {
 
         // Set adapter-level properties used by addAdditionalGetCommands
         ctx.adapter.currentSpotAreaID = 'unknown';
-        ctx.adapter.getDevice = sinon.stub().returns({ isCleaning: sinon.stub().returns(false) });
+        ctx.getDevice().isCleaning.returns(false);
 
         queue = new Queue(ctx);
     });
