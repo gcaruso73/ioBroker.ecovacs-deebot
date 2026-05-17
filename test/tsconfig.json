@@ -1,9 +1,12 @@
 {
+    // Extended from root to inherits baseline JS checking options
     "extends": "../tsconfig.json",
     "compilerOptions": {
-        "noImplicitAny": false
+        "noImplicitAny": false,
+        "checkJs": false
     },
     "include": [
         "./**/*.js"
-    ]
+    ],
+    "exclude": []
 }

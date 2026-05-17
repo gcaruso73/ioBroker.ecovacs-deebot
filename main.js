@@ -231,10 +231,10 @@ class EcovacsDeebot extends utils.Adapter {
 
     async getDeviceList() {
         // Read credentials from adapter config (decrypted by js-controller)
-        const email = this.config.email || this.config?.native?.email || '';
-        const password = this.password || this.config.password || this.config?.native?.password || '';
-        const countrycode = this.config.countrycode || this.config?.native?.countrycode || 'de';
-        const authDomain = this.config.authDomain || this.config?.native?.authDomain || '';
+        const email = this.config.email || this.config?.['native']?.email || '';
+        const password = this.password || this.config.password || this.config?.['native']?.password || '';
+        const countrycode = this.config.countrycode || this.config?.['native']?.countrycode || 'de';
+        const authDomain = this.config.authDomain || this.config?.['native']?.authDomain || '';
 
         if (!email || !password) {
             this.log.debug('getDeviceList: no credentials in adapter config, returning empty list');
@@ -1298,7 +1298,7 @@ class EcovacsDeebot extends utils.Adapter {
             if (adapterObj) {
                 let changed = false;
                 if (adapterObj.native) changed = migrateNative(adapterObj.native) || changed;
-                if (adapterObj.common && adapterObj.common.native) changed = migrateNative(adapterObj.common.native) || changed;
+                if (adapterObj.common && adapterObj.common['native']) changed = migrateNative(adapterObj.common['native']) || changed;
                 if (changed) {
                     await this.setForeignObjectAsync('system.adapter.ecovacs-deebot', adapterObj);
                     this.log.info('Migrated adapter definition object');
