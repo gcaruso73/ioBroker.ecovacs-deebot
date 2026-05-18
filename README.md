@@ -17,7 +17,7 @@ This adapter uses the [ecovacs-deebot.js](https://github.com/mrbungle64/ecovacs-
 
 To ensure long-term maintainability, we are streamlining the adapter's architecture. **Note: We are currently in the 1.4.x release cycle.**
 
-1. **Phase 1 (Planned): Final Legacy Support (Adapter v1.5.x / Library v0.9.6)**
+1. **Phase 1 (Planned): Final Legacy Support (Adapter v1.4.15 / Library v0.9.6)**
    * This will be the final "safe harbor" for all legacy devices using XML protocols (XMPP/XML or MQTT/XML).
    * Once released, no new legacy features will be added.
 2. **Phase 2 (Planned): Modernization (Adapter v2.0.x / Library v1.0.0)**
@@ -41,11 +41,35 @@ Support is divided into tiers based on device availability for the maintainer:
 If you own a modern (MQTT/JSON) model that is currently not supported:
 1. Check the [ecovacs-deebot.js](https://github.com/mrbungle64/ecovacs-deebot.js) library.
 2. Provide a **Pull Request** with the necessary model definitions.
-3. **Requests for new models without a Pull Request will be closed without further notice.**
+3. In addition to the library, there may be new functions or states that need to be implemented in the adapter itself.
+4. **Requests for new models without a Pull Request will be closed without further notice.**
+
+#### Library vs. Adapter responsibilities
+To support a new model, usually changes are needed in both parts:
+
+*   **[ecovacs-deebot.js (Library)](https://github.com/mrbungle64/ecovacs-deebot.js)**
+    *   **Protocol & Communication:** Handling the low-level connection (MQTT/JSON).
+    *   **Model Definitions:** Defining which commands and events a specific model supports.
+    *   **Data Parsing:** Translating raw device messages into meaningful data structures.
+*   **ioBroker.ecovacs-deebot (Adapter)**
+    *   **State Management:** Creating and maintaining the ioBroker object tree (states like `control.clean`, `info.battery`, etc.).
+    *   **Event Mapping:** Linking library events to the corresponding ioBroker states.
+    *   **Extended Logic:** Implementing complex features or specific ioBroker-side helpers.
 
 ---
 
 ## Changelog
+
+### 2.0.x (alpha)
+- **Breaking Change: Multi-Device Architecture**
+  - Manage all account devices in a single instance instead of running separate adapter instances
+  - Automatic native config migration on startup (removes legacy dot-notation keys and the `deviceNumber` setting)
+- **Breaking Change: No new features for legacy devices**
+  - Transition to a **Pure MQTT/JSON**
+  - Legacy models (e.g., OZMO 930, Deebot 900, U2 series) will no longer work or be supported
+- **Architectural Modernization & Quality Assurance**
+  - Completely refactored codebase
+  - Created a robust test suite with 80%+ code coverage for unit and integration testing
 
 ### 1.4.16 (alpha)
 - Breaking change: Bump minimum required version of Node.js to 20.x
