@@ -83,7 +83,8 @@ describe('connection-pipeline.test.js - Connection Flow and Protections', () => 
         CONNECT_COOLDOWN_MS: 30000,
         RECONNECT_COOLDOWN_MS: 60000,
         MIN_POLLING_INTERVAL_MS: 60000,
-        STARTUP_GRACE_PERIOD_MS: 5000
+        STARTUP_GRACE_PERIOD_MS: 5000,
+        DEVICE_CONNECTION_DELAY_MS: 30000
     };
 
     const mockDeebotModel = class {
@@ -142,7 +143,7 @@ describe('connection-pipeline.test.js - Connection Flow and Protections', () => 
     let instance;
 
     beforeEach(() => {
-        clock = sinon.useFakeTimers();
+        clock = sinon.useFakeTimers(1000000);
         sinon.resetHistory();
 
         mockEcoVacsAPI.prototype.connect = sinon.stub().resolves();
@@ -204,10 +205,18 @@ describe('connection-pipeline.test.js - Connection Flow and Protections', () => 
         
         // Wait for first device to be processed
         await clock.tickAsync(0);
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
         expect(mockEcoVacsAPI.prototype.getVacBot.calledOnce).to.be.true;
         
         // Advance clock by 30s
         await clock.tickAsync(30000);
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
         expect(mockEcoVacsAPI.prototype.getVacBot.calledTwice).to.be.true;
         
         await connectPromise;
@@ -230,10 +239,15 @@ describe('connection-pipeline.test.js - Connection Flow and Protections', () => 
         };
         instance.deviceContexts.set('test_device', mockCtx);
 
+        // Advance clock past startup grace period
+        clock.tick(mockConstants.STARTUP_GRACE_PERIOD_MS + 1000);
         // Test reconnect cleanup
         instance.reconnect();
         expect(mockVacbot.removeAllListeners.calledOnce).to.be.true;
         
+        // Re-add context for unload cleanup test
+        instance.deviceContexts.set('test_device', mockCtx);
+
         // Test unload cleanup
         mockVacbot.removeAllListeners.resetHistory();
         instance.onUnload(() => {});
@@ -257,5 +271,35 @@ describe('connection-pipeline.test.js - Connection Flow and Protections', () => 
         
         // Should NOT have called getVacBot for device1 because it already exists
         expect(mockEcoVacsAPI.prototype.getVacBot.called).to.be.false;
+    });
+
+    it('6. getVacBot throwing XML based model identified (unsupported) error is caught, logged, and device skipped', async () => {
+        const devices = [
+            { did: 'device1', deviceName: 'Bot1' },
+            { did: 'device2', deviceName: 'Bot2' }
+        ];
+        mockEcoVacsAPI.prototype.devices.resolves(devices);
+
+        // Make getVacBot fail for device1 but succeed for device2
+        mockEcoVacsAPI.prototype.getVacBot.onFirstCall().throws(new Error("'XML' based model identified (unsupported)"));
+        mockEcoVacsAPI.prototype.getVacBot.onSecondCall().returns({
+            connect: sinon.stub(),
+            disconnect: sinon.stub(),
+            removeAllListeners: sinon.stub(),
+            on: sinon.stub()
+        });
+
+        const connectPromise = instance.connect();
+
+        await clock.tickAsync(0);
+        expect(instance.log.error.calledWithMatch(/'XML' based model identified/)).to.be.true;
+
+        // Skip device1, advance clock to handle device2 staggered connect delay
+        await clock.tickAsync(30000);
+        await connectPromise;
+
+        // Device contexts should only contain device2
+        expect(instance.deviceContexts.has('device1')).to.be.false;
+        expect(instance.deviceContexts.has('device2')).to.be.true;
     });
 });

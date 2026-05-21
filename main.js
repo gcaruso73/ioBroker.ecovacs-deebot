@@ -482,7 +482,17 @@ class EcovacsDeebot extends utils.Adapter {
                     this.log.debug('[' + deviceId + '] Device already connected, skipping');
                     continue;
                 }
-                const vacbot = api.getVacBot(api.uid, EcoVacsAPI.REALM, api.resource, api.user_access_token, vacuum, continent);
+                let vacbot;
+                try {
+                    vacbot = api.getVacBot(api.uid, EcoVacsAPI.REALM, api.resource, api.user_access_token, vacuum, continent);
+                } catch (e) {
+                    if (e.message && e.message.includes("'XML' based model identified")) {
+                        const nick = vacuum.nick || vacuum.deviceName || vacuum.name || deviceId;
+                        this.log.error(`[${nick}] 'XML' based model identified (unsupported). This model is not supported by this version of the adapter.`);
+                        continue;
+                    }
+                    throw e;
+                }
                 const ctx = new DeviceContext(this, deviceId, vacbot, vacuum, this.requestThrottle, useSkipPrefix);
                 ctx.vacuum = vacuum; ctx.api = api; ctx.model = new Model(vacbot, this.config); ctx.device = new Device(ctx);
                 this.deviceContexts.set(deviceId, ctx);
