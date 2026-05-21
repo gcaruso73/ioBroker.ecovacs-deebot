@@ -5,6 +5,8 @@ const { describe, it } = require('mocha');
 const sinon = require('sinon');
 const Model = require('../lib/deebotModel');
 
+// TODO: Fully implement capability and feature tests for these devices once the model concept is completed.
+
 /**
  * Create a realistic mock vacbot for a given device class and model type.
  */
