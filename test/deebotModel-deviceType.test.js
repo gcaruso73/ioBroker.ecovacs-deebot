@@ -3,6 +3,25 @@
 const { expect } = require('chai');
 const { describe, it, beforeEach } = require('mocha');
 
+// Map from model type to user-friendly device type (mirrors modelTypes.js in the library)
+const LIBRARY_DEVICE_TYPE_MAP = {
+    'airbot': 'Air Purifier',
+    'lawnMower': 'Lawn Mower',
+    'aqMonitor': 'Air Quality Monitor',
+    'yeedi': 'Vacuum Cleaner',
+    'legacy': 'Vacuum Cleaner',
+    '950': 'Vacuum Cleaner',
+    'U2': 'Vacuum Cleaner',
+    'mini': 'Vacuum Cleaner',
+    'N8': 'Vacuum Cleaner',
+    'T8': 'Vacuum Cleaner',
+    'T9': 'Vacuum Cleaner',
+    'T10': 'Vacuum Cleaner',
+    'T20': 'Vacuum Cleaner',
+    'X1': 'Vacuum Cleaner',
+    'X2': 'Vacuum Cleaner'
+};
+
 // Mock the vacbot object to simulate different device types
 class MockVacbot {
     constructor(modelType, deviceClass, deviceProperties = {}) {
@@ -15,26 +34,29 @@ class MockVacbot {
         return this.modelType;
     }
 
-    getDeviceProperty(property) {
-        return this.deviceProperties[property] || false;
+    getDeviceProperty(property, defaultValue = false) {
+        if (property === 'deviceType') {
+            return LIBRARY_DEVICE_TYPE_MAP[this.modelType] || defaultValue;
+        }
+        return this.deviceProperties[property] !== undefined ? this.deviceProperties[property] : defaultValue;
     }
 
     hasMappingCapabilities() {
-        return ['airbot', '950', 't8', 't9', 't10', 't20', 'x1', 'x2', 't30', 'n8', 'u2'].includes(this.modelType);
+        return ['airbot', '950', 'N8', 'T8', 'T9', 'T10', 'T20', 'X1', 'X2'].includes(this.modelType);
     }
 
     hasAirDrying() {
-        return ['t20', 'x1', 'x2', 't30'].includes(this.modelType);
+        return ['T20', 'X1', 'X2'].includes(this.modelType);
     }
 
     isSupportedFeature(feature) {
         const featureMap = {
-            'info.waterbox': ['t8', 't9', 't10', 't20', 'x1', 'x2', 't30', 'n8'],
-            'control.autoEmptyStation': ['t8', 't9', 't10', 't20', 'x1', 'x2', 't30'],
-            'map.spotAreas': ['950', 't8', 't9', 't10', 't20', 'x1', 'x2', 't30'],
-            'map.virtualBoundaries': ['950', 't8', 't9', 't10', 't20', 'x1', 'x2', 't30'],
-            'control.continuousCleaning': ['950', 't8', 't9', 't10', 't20', 'x1', 'x2', 't30'],
-            'control.doNotDisturb': ['950', 't8', 't9', 't10', 't20', 'x1', 'x2', 't30']
+            'info.waterbox': ['T8', 'T9', 'T10', 'T20', 'X1', 'X2', 'N8'],
+            'control.autoEmptyStation': ['T8', 'T9', 'T10', 'T20', 'X1', 'X2'],
+            'map.spotAreas': ['950', 'T8', 'T9', 'T10', 'T20', 'X1', 'X2'],
+            'map.virtualBoundaries': ['950', 'T8', 'T9', 'T10', 'T20', 'X1', 'X2'],
+            'control.continuousCleaning': ['950', 'T8', 'T9', 'T10', 'T20', 'X1', 'X2'],
+            'control.doNotDisturb': ['950', 'T8', 'T9', 'T10', 'T20', 'X1', 'X2']
         };
         
         return featureMap[feature] ? featureMap[feature].includes(this.modelType) : false;
@@ -53,25 +75,7 @@ class TestableModel {
     }
 
     getDeviceType() {
-        const modelType = this.getModelType();
-        const DEVICE_TYPE_MAPPING = {
-            'airbot': 'Air Purifier',
-            'goat': 'Lawn Mower',
-            'aqMonitor': 'Air Quality Monitor',
-            'yeedi': 'Yeedi Vacuum',
-            'legacy': 'Vacuum Cleaner',
-            '950': 'Vacuum Cleaner',
-            't8': 'Vacuum Cleaner',
-            't9': 'Vacuum Cleaner',
-            't10': 'Vacuum Cleaner',
-            't20': 'Vacuum Cleaner',
-            't30': 'Vacuum Cleaner',
-            'n8': 'Vacuum Cleaner',
-            'x1': 'Vacuum Cleaner',
-            'x2': 'Vacuum Cleaner',
-            'u2': 'Vacuum Cleaner'
-        };
-        return DEVICE_TYPE_MAPPING[modelType] || 'Unknown Device';
+        return this.vacbot.getDeviceProperty('deviceType', 'Unknown Device');
     }
 
     getDeviceCapabilities() {
@@ -100,8 +104,8 @@ describe('Device Type Classification', () => {
             expect(deviceType).to.equal('Air Purifier');
         });
 
-        it('should return "Lawn Mower" for goat model type', () => {
-            const mockVacbot = new MockVacbot('goat', '5xu9h3');
+        it('should return "Lawn Mower" for lawnMower model type', () => {
+            const mockVacbot = new MockVacbot('lawnMower', '5xu9h3');
             const model = new TestableModel(mockVacbot);
             
             const deviceType = model.getDeviceType();
@@ -116,12 +120,12 @@ describe('Device Type Classification', () => {
             expect(deviceType).to.equal('Air Quality Monitor');
         });
 
-        it('should return "Yeedi Vacuum" for yeedi model type', () => {
+        it('should return "Vacuum Cleaner" for yeedi model type', () => {
             const mockVacbot = new MockVacbot('yeedi', 'p5nx9u');
             const model = new TestableModel(mockVacbot);
             
             const deviceType = model.getDeviceType();
-            expect(deviceType).to.equal('Yeedi Vacuum');
+            expect(deviceType).to.equal('Vacuum Cleaner');
         });
 
         it('should return "Vacuum Cleaner" for legacy model type', () => {
@@ -141,7 +145,7 @@ describe('Device Type Classification', () => {
         });
 
         it('should return "Vacuum Cleaner" for T8 model type', () => {
-            const mockVacbot = new MockVacbot('t8', 'h18jkh');
+            const mockVacbot = new MockVacbot('T8', 'h18jkh');
             const model = new TestableModel(mockVacbot);
             
             const deviceType = model.getDeviceType();
@@ -149,7 +153,7 @@ describe('Device Type Classification', () => {
         });
 
         it('should return "Vacuum Cleaner" for T20 model type', () => {
-            const mockVacbot = new MockVacbot('t20', '3yqsch');
+            const mockVacbot = new MockVacbot('T20', '3yqsch');
             const model = new TestableModel(mockVacbot);
             
             const deviceType = model.getDeviceType();
@@ -157,7 +161,7 @@ describe('Device Type Classification', () => {
         });
 
         it('should return "Vacuum Cleaner" for X1 model type', () => {
-            const mockVacbot = new MockVacbot('x1', '3yqsch');
+            const mockVacbot = new MockVacbot('X1', '3yqsch');
             const model = new TestableModel(mockVacbot);
             
             const deviceType = model.getDeviceType();
@@ -193,8 +197,8 @@ describe('Device Type Classification', () => {
             expect(capabilities.hasVoiceAssistant).to.be.true;
         });
 
-        it('should return correct capabilities for goat device', () => {
-            const mockVacbot = new MockVacbot('goat', '5xu9h3');
+        it('should return correct capabilities for lawnMower (GOAT) device', () => {
+            const mockVacbot = new MockVacbot('lawnMower', '5xu9h3');
             const model = new TestableModel(mockVacbot);
             
             const capabilities = model.getDeviceCapabilities();
@@ -213,7 +217,7 @@ describe('Device Type Classification', () => {
         });
 
         it('should return correct capabilities for high-end vacuum (T20)', () => {
-            const mockVacbot = new MockVacbot('t20', '3yqsch', { yiko: true });
+            const mockVacbot = new MockVacbot('T20', '3yqsch', { yiko: true });
             const model = new TestableModel(mockVacbot);
             
             const capabilities = model.getDeviceCapabilities();
