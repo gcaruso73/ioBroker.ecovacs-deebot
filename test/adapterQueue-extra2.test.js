@@ -175,7 +175,7 @@ describe('adapterQueue.js - advanced edge cases', () => {
         });
 
         it('should skip GetNetInfo when network info not supported', () => {
-            ctx.getModel().isSupportedFeature.withArgs('info.network.ip').returns(false);
+            ctx.getModel().isSupportedFeature.withArgs('info.network').returns(false);
             const queue = new Queue(ctx);
             queue.addInitialGetCommands();
             const cmds = queue.entries.map(e => e.cmd);

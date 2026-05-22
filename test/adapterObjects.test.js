@@ -385,7 +385,7 @@ describe('adapterObjects.js', () => {
         });
 
         it('should handle no network info feature', async () => {
-            ctx.model.isSupportedFeature.callsFake((f) => f !== 'info.network.ip');
+            ctx.model.isSupportedFeature.callsFake((f) => f !== 'info.network');
 
             await adapterObjects.createAdditionalObjects(adapter, ctx);
 
