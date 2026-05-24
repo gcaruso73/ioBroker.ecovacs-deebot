@@ -1,9 +1,9 @@
 {
   "common": {
     "name": "ecovacs-deebot",
-    "version": "2.0.1",
+    "version": "2.0.2",
     "news": {
-      "2.0.0": {
+      "2.0.2": {
         "en": "BREAKING CHANGE: The adapter now manages ALL devices from your account in a single instance. Please delete all adapter instances except one before updating. The deviceNumber setting has been removed.",
         "de": "BREAKING CHANGE: Der Adapter verwaltet nun ALLE Geräte Ihres Kontos in einer einzigen Instanz. Bitte löschen Sie vor dem Update alle Adapter-Instanzen bis auf eine. Die Einstellung Gerätenummer wurde entfernt.",
         "ru": "CRITICAL CHANGE: The adapter now manages ALL devices from your account in a single instance. Please delete all adapter instances except one before updating.",
