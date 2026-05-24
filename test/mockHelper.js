@@ -20,6 +20,7 @@ function createMockModel(overrides = {}) {
         isModelTypeX2: sinon.stub().returns(false),
         isModelTypeT9Based: sinon.stub().returns(false),
         getModelType: sinon.stub().returns('950'),
+        getPlatformType: sinon.stub().returns('950'),
 
         // Feature checks
         isSupportedFeature: sinon.stub().returns(true),
@@ -37,6 +38,7 @@ function createMockModel(overrides = {}) {
 
         // Device info getters
         getDeviceType: sinon.stub().returns('Vacuum Cleaner'),
+        getDeviceCategory: sinon.stub().returns('Vacuum Cleaner'),
         getDeviceCapabilities: sinon.stub().returns({ type: 'Vacuum Cleaner', hasMapping: true }),
 
         // Nested vacbot for model-level device property checks
@@ -198,6 +200,7 @@ function createMockCtx(overrides = {}) {
         device: device,
         getModel: sinon.stub().returns(model),
         getModelType: sinon.stub().returns('950'),
+        getPlatformType: sinon.stub().returns('950'),
         getDevice: sinon.stub().returns(device),
 
         // Queues (lightweight stubs - tests that need real Queue behaviour should

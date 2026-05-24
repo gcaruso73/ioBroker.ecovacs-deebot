@@ -57,6 +57,7 @@ function buildEventHandlerFixtures() {
             getDeviceClass: sinon.stub().returns('p1jij8'),
             getProductName: sinon.stub().returns('Test Bot'),
             getDeviceType: sinon.stub().returns('Vacuum Cleaner'),
+            getDeviceCategory: sinon.stub().returns('Vacuum Cleaner'),
             getProtocol: sinon.stub().returns('MQTT'),
             is950type: sinon.stub().returns(true),
             getDeviceCapabilities: sinon.stub().returns({
@@ -69,6 +70,7 @@ function buildEventHandlerFixtures() {
             getProductImageURL: sinon.stub().returns('')
         }),
         getModelType: sinon.stub().returns('T20'),
+        getPlatformType: sinon.stub().returns('T20'),
         adapterProxy: {
             setStateConditional: sinon.stub(),
             createObjectNotExists: sinon.stub().resolves()

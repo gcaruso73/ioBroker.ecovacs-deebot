@@ -118,7 +118,7 @@ describe('status.enabled - Device Deactivation Feature', () => {
         });
 
         it('should NOT create status.enabled for aqMonitor model type', async () => {
-            ctx.getModelType.returns('aqMonitor');
+            ctx.getPlatformType.returns('aqMonitor');
 
             await adapterObjects.createInitialObjects(adapter, ctx);
 

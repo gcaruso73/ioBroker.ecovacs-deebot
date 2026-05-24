@@ -27,7 +27,7 @@ describe('adapterQueue.js - feature branches', () => {
         ctx.getModel().is950type.returns(false);
         ctx.getModel().isSupportedFeature.returns(true);
         ctx.getModel().hasAdvancedMode.returns(false);
-        ctx.getModelType.returns('deebot');
+        ctx.getPlatformType.returns('deebot');
 
         // Apply overrides
         Object.keys(overrides || {}).forEach(k => {
@@ -118,7 +118,7 @@ describe('adapterQueue.js - feature branches', () => {
         it('should add GetAirDrying for yeedi model with air drying', () => {
             const { queue } = createQueueWithModel();
             queue.ctx.getModel().hasAirDrying.returns(true);
-            queue.ctx.getModelType.returns('yeedi');
+            queue.ctx.getPlatformType.returns('yeedi');
             queue.addStandardGetCommands();
             expect(queue.add.calledWith('GetAirDrying')).to.be.true;
         });

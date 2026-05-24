@@ -223,7 +223,7 @@ describe('deviceContext.js - DeviceContext class', () => {
         });
     });
 
-    describe('getModel() / getDevice() / getModelType()', () => {
+    describe('getModel() / getDevice() / getPlatformType() / getModelType()', () => {
         it('getModel should return null when model is not set', () => {
             const ctx = createCtx();
             expect(ctx.getModel()).to.be.null;
@@ -231,7 +231,7 @@ describe('deviceContext.js - DeviceContext class', () => {
 
         it('getModel should return model after it is set', () => {
             const ctx = createCtx();
-            const model = { getModelType: sinon.stub().returns('950') };
+            const model = { getPlatformType: sinon.stub().returns('950'), getModelType: sinon.stub().returns('950') };
             ctx.model = model;
             expect(ctx.getModel()).to.equal(model);
         });
@@ -248,14 +248,21 @@ describe('deviceContext.js - DeviceContext class', () => {
             expect(ctx.getDevice()).to.equal(device);
         });
 
-        it('getModelType should return empty string when model is null', () => {
+        it('getPlatformType should return empty string when model is null', () => {
             const ctx = createCtx();
-            expect(ctx.getModelType()).to.equal('');
+            expect(ctx.getPlatformType()).to.equal('');
         });
 
-        it('getModelType should return model type when model is set', () => {
+        it('getPlatformType should return platform type when model is set', () => {
             const ctx = createCtx();
-            const model = { getModelType: sinon.stub().returns('deebot') };
+            const model = { getPlatformType: sinon.stub().returns('deebot') };
+            ctx.model = model;
+            expect(ctx.getPlatformType()).to.equal('deebot');
+        });
+
+        it('getModelType (deprecated) should delegate to getPlatformType', () => {
+            const ctx = createCtx();
+            const model = { getPlatformType: sinon.stub().returns('deebot') };
             ctx.model = model;
             expect(ctx.getModelType()).to.equal('deebot');
         });

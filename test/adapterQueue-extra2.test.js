@@ -35,7 +35,7 @@ describe('adapterQueue.js - advanced edge cases', () => {
         ctx.getModel().hasAdvancedMode.returns(false);
         ctx.getModel().isSupportedFeature.returns(true);
         ctx.getModel().vacbot.getDeviceProperty.returns(false);
-        ctx.getModelType.returns('deebot');
+        ctx.getPlatformType.returns('deebot');
         ctx.getDevice().useV2commands.returns(false);
         ctx.spotAreaCleanings = 1;
         ctx.cleaningLogAcknowledged = false;
@@ -184,7 +184,7 @@ describe('adapterQueue.js - advanced edge cases', () => {
 
         it('should add GetAirDrying for yeedi with air drying', () => {
             ctx.getModel().hasAirDrying.returns(true);
-            ctx.getModelType.returns('yeedi');
+            ctx.getPlatformType.returns('yeedi');
             const queue = new Queue(ctx);
             queue.addInitialGetCommands();
             const cmds = queue.entries.map(e => e.cmd);
@@ -193,7 +193,7 @@ describe('adapterQueue.js - advanced edge cases', () => {
 
         it('should add GetStationState/GetDryingDuration for non-yeedi air drying', () => {
             ctx.getModel().hasAirDrying.returns(true);
-            ctx.getModelType.returns('T20');
+            ctx.getPlatformType.returns('T20');
             const queue = new Queue(ctx);
             queue.addInitialGetCommands();
             const cmds = queue.entries.map(e => e.cmd);
@@ -307,14 +307,14 @@ describe('adapterQueue.js - advanced edge cases', () => {
         });
 
         it('should skip lifespan for goat', () => {
-            ctx.getModelType.returns('goat');
+            ctx.getPlatformType.returns('goat');
             const queue = new Queue(ctx);
             queue.addGetLifespan();
             expect(queue.entries.filter(e => e.cmd === 'GetLifeSpan')).to.have.length(0);
         });
 
         it('should skip lifespan for aqMonitor', () => {
-            ctx.getModelType.returns('aqMonitor');
+            ctx.getPlatformType.returns('aqMonitor');
             const queue = new Queue(ctx);
             queue.addGetLifespan();
             expect(queue.entries.filter(e => e.cmd === 'GetLifeSpan')).to.have.length(0);

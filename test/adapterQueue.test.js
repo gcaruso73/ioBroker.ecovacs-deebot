@@ -42,7 +42,7 @@ describe('adapterQueue.js', () => {
         ctx.getModel().vacbot.getDeviceProperty.returns(false);
 
         // Set the ctx-level model type to 'deebot' for default tests
-        ctx.getModelType.returns('deebot');
+        ctx.getPlatformType.returns('deebot');
 
         // Set up device mock to return useV2commands false by default
         ctx.getDevice().useV2commands.returns(false);
@@ -140,7 +140,7 @@ describe('adapterQueue.js', () => {
         });
 
         it('should add aqMonitor commands', () => {
-            ctx.getModelType.returns('aqMonitor');
+            ctx.getPlatformType.returns('aqMonitor');
             queue.addInitialGetCommands();
             const cmds = queue.entries.map(e => e.cmd);
             expect(cmds).to.include('GetJCYAirQuality');
@@ -148,7 +148,7 @@ describe('adapterQueue.js', () => {
         });
 
         it('should add airbot commands', () => {
-            ctx.getModelType.returns('airbot');
+            ctx.getPlatformType.returns('airbot');
             ctx.getModel().isModelTypeAirbot.returns(true);
             queue.addInitialGetCommands();
             const cmds = queue.entries.map(e => e.cmd);
@@ -197,7 +197,7 @@ describe('adapterQueue.js', () => {
         });
 
         it('should add aqMonitor commands only', () => {
-            ctx.getModelType.returns('aqMonitor');
+            ctx.getPlatformType.returns('aqMonitor');
             queue.addStandardGetCommands();
             const cmds = queue.entries.map(e => e.cmd);
             expect(cmds).to.include('GetJCYAirQuality');
@@ -206,7 +206,7 @@ describe('adapterQueue.js', () => {
 
         it('should add GetStationState for non-yeedi devices with air drying', () => {
             ctx.getModel().hasAirDrying.returns(true);
-            ctx.getModelType.returns('T20');
+            ctx.getPlatformType.returns('T20');
             queue.addStandardGetCommands();
             const cmds = queue.entries.map(e => e.cmd);
             expect(cmds).to.include('GetStationState');
@@ -237,7 +237,7 @@ describe('adapterQueue.js', () => {
         });
 
         it('should add only one lifespan command for airbot', () => {
-            ctx.getModelType.returns('airbot');
+            ctx.getPlatformType.returns('airbot');
             queue.addGetLifespan();
             const entries = queue.entries.filter(e => e.cmd === 'GetLifeSpan');
             expect(entries).to.have.length(1);
@@ -245,7 +245,7 @@ describe('adapterQueue.js', () => {
         });
 
         it('should skip lifespan for goat', () => {
-            ctx.getModelType.returns('goat');
+            ctx.getPlatformType.returns('goat');
             queue.addGetLifespan();
             const cmds = queue.entries.map(e => e.cmd);
             expect(cmds).to.not.include('GetLifeSpan');

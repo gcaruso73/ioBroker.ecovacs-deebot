@@ -147,6 +147,8 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
             this.isModelTypeX1 = sinon.stub().returns(false);
             this.isModelTypeAirbot = sinon.stub().returns(false);
             this.getModelType = sinon.stub().returns('950');
+            this.getPlatformType = sinon.stub().returns('950');
+            this.getDeviceCategory = sinon.stub().returns('Vacuum Cleaner');
         }
     };
 
@@ -207,6 +209,7 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
             this.getModel = sinon.stub().returns(new mockDeebotModel());
             this.getDevice = sinon.stub().returns(new mockDevice());
             this.getModelType = sinon.stub().returns('950');
+            this.getPlatformType = sinon.stub().returns('950');
             this.statePath = sinon.stub().returnsArg(0);
             this.adapterProxy = {
                 setStateConditional: sinon.stub(),
@@ -456,6 +459,7 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
                     getProductName: () => 'Test Model',
                     getDeviceClass: () => 'test_class',
                     getDeviceType: () => 'Test Type',
+                    getDeviceCategory: () => 'Test Type',
                     getDeviceCapabilities: () => ({}),
                     getProductImageURL: () => '',
                     getProtocol: () => 'MQTT',
@@ -463,6 +467,7 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
                     getModelType: () => '950'
                 }),
                 getModelType: () => '950',
+                getPlatformType: () => '950',
                 api: { getVersion: () => '0.9.6' }
             };
 
@@ -504,6 +509,7 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
                     getProductName: () => 'Test Model',
                     getDeviceClass: () => 'test_class',
                     getDeviceType: () => 'Test Type',
+                    getDeviceCategory: () => 'Test Type',
                     getDeviceCapabilities: () => ({}),
                     getProductImageURL: () => '',
                     getProtocol: () => 'MQTT',
@@ -511,6 +517,7 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
                     getModelType: () => '950'
                 }),
                 getModelType: () => '950',
+                getPlatformType: () => '950',
                 api: { getVersion: () => '0.9.6' }
             };
 

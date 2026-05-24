@@ -60,7 +60,7 @@ describe('adapterObjects.js', () => {
 
     describe('createInitialObjects', () => {
         it('should create only history objects for aqMonitor model type', async () => {
-            ctx.getModelType.returns('aqMonitor');
+            ctx.getPlatformType.returns('aqMonitor');
 
             await adapterObjects.createInitialObjects(adapter, ctx);
 
@@ -151,7 +151,7 @@ describe('adapterObjects.js', () => {
             const modelTypes = ['950', 'airbot', 'goat', 'aqMonitor', 'yeedi', 'legacy'];
 
             for (const modelType of modelTypes) {
-                ctx.getModelType.returns(modelType);
+                ctx.getPlatformType.returns(modelType);
                 ctx.adapterProxy.createObjectNotExists.reset();
 
                 await adapterObjects.createInitialObjects(adapter, ctx);

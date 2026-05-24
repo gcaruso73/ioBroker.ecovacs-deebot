@@ -1249,8 +1249,22 @@ class EcovacsDeebot extends utils.Adapter {
         }
     }
 
+    /**
+     * Returns the technical platform/architecture type for a device context.
+     * @param {object} ctx
+     * @returns {string}
+     */
+    getPlatformType(ctx) {
+        return ctx.getModel().getPlatformType();
+    }
+
+    /**
+     * @deprecated Use getPlatformType() instead.
+     * @param {object} ctx
+     * @returns {string}
+     */
     getModelType(ctx) {
-        return ctx.getModel().getModelType();
+        return this.getPlatformType(ctx);
     }
 
     /**
