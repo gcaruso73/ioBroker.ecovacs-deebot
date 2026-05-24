@@ -69,66 +69,21 @@ describe('device.js', () => {
     });
 
     describe('setBatteryLevel', () => {
-        it('should set battery level for non-900 series devices', () => {
-            ctx.getModel().isModel900Series.returns(false);
-
+        it('should set the battery level', () => {
             device.setBatteryLevel(85);
-
             expect(device.batteryLevel).to.equal(85);
-            expect(ctx.getModel().isModel900Series.called).to.be.true;
         });
 
-        it('should handle 900 series device logic when charging', () => {
-            ctx.getModel().isModel900Series.returns(true);
+        it('should always update battery level regardless of charge status', () => {
             device.batteryLevel = 80;
-            device.status = 'charging'; // isCharging() returns true
-
-            device.setBatteryLevel(85); // Higher than current, charging
-
+            device.status = 'cleaning';
+            device.setBatteryLevel(85);
             expect(device.batteryLevel).to.equal(85);
-            expect(ctx.adapter.log.debug.calledWith('Ignoring battery level value: 85 (current value: 80)')).to.be.false;
-        });
 
-        it('should ignore battery level for 900 series when not charging and level is higher', () => {
-            ctx.getModel().isModel900Series.returns(true);
             device.batteryLevel = 80;
-            device.status = 'cleaning'; // isCharging() = false, isNotCharging() = true
-
-            device.setBatteryLevel(85); // Higher than current, not charging
-
-            expect(device.batteryLevel).to.equal(80); // Should not change
-            expect(ctx.adapter.log.debug.calledWith('Ignoring battery level value: 85 (current value: 80)')).to.be.true;
-        });
-
-        it('should accept battery level for 900 series when not charging and level is lower', () => {
-            ctx.getModel().isModel900Series.returns(true);
-            device.batteryLevel = 80;
-            device.status = 'cleaning'; // isCharging() = false, isNotCharging() = true
-
-            device.setBatteryLevel(75); // Lower than current, not charging
-
+            device.status = 'charging';
+            device.setBatteryLevel(75);
             expect(device.batteryLevel).to.equal(75);
-        });
-
-        it('should ignore battery level for 900 series when charging and level is lower', () => {
-            ctx.getModel().isModel900Series.returns(true);
-            device.batteryLevel = 80;
-            device.status = 'charging'; // isCharging() = true
-
-            device.setBatteryLevel(75); // Lower than current, charging
-
-            // The 900 series logic: charging + lower level => ignored
-            expect(device.batteryLevel).to.equal(80); // Should not change
-            expect(ctx.adapter.log.debug.calledWith('Ignoring battery level value: 75 (current value: 80)')).to.be.true;
-        });
-
-        it('should handle first battery level setting for 900 series', () => {
-            ctx.getModel().isModel900Series.returns(true);
-            device.batteryLevel = null; // First time setting
-
-            device.setBatteryLevel(85);
-
-            expect(device.batteryLevel).to.equal(85);
         });
 
         it('should handle null battery level', () => {
@@ -481,8 +436,7 @@ describe('device.js', () => {
 
         it('should not throw when ctx has adapter with log.debug', () => {
             const minimalCtx = {
-                adapter: { log: { debug: sinon.stub() } },
-                getModel: sinon.stub().returns({ isModel900Series: sinon.stub().returns(false) })
+                adapter: { log: { debug: sinon.stub() } }
             };
             const d = new Device(minimalCtx);
             expect(() => d.setStatus('test')).to.not.throw();

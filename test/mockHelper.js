@@ -14,7 +14,6 @@ function createMockModel(overrides = {}) {
         is950type_V2: sinon.stub().returns(false),
         isNot950type: sinon.stub().returns(false),
         isNot950type_V2: sinon.stub().returns(true),
-        isModel900Series: sinon.stub().returns(false),
         isModelTypeAirbot: sinon.stub().returns(false),
         isModelTypeT20: sinon.stub().returns(false),
         isModelTypeX1: sinon.stub().returns(false),
