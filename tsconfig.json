@@ -3,24 +3,19 @@
     "compilerOptions": {
         // do not compile anything, this file is just to configure type checking
         "noEmit": true,
-
         // check JS files
         "allowJs": true,
         "checkJs": true,
-
         "module": "commonjs",
         // this is necessary for the automatic typing of the adapter config
         "resolveJsonModule": true,
-
         "types": [
             "node"
         ],
-
         // Disable strict type checking for JavaScript codebase to allow dynamic JS patterns
         "strict": false,
         "noImplicitAny": false,
         "skipLibCheck": true,
-
         // Target modern ES2022 (fully supported in Node >= 20)
         "target": "es2022"
     },
@@ -32,7 +27,6 @@
         "node_modules/**",
         "admin/**",
         "test/**",
-        "main.test.js",
-        "main.new.js"
+        "main.test.js"
     ]
 }
