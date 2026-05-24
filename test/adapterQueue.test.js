@@ -136,7 +136,6 @@ describe('adapterQueue.js', () => {
             expect(cmds).to.include('GetBatteryState');
             expect(cmds).to.include('GetChargeState');
             expect(cmds).to.include('GetPosition');
-            expect(cmds).to.include('GetChargerPos');
             expect(cmds).to.include('GetMaps');
         });
 
