@@ -37,7 +37,6 @@ function createMockModel(overrides = {}) {
         hasOtaSupport: sinon.stub().returns(true),
 
         // Device info getters
-        getDeviceType: sinon.stub().returns('Vacuum Cleaner'),
         getDeviceCategory: sinon.stub().returns('Vacuum Cleaner'),
         getDeviceCapabilities: sinon.stub().returns({ type: 'Vacuum Cleaner', hasMapping: true }),
 

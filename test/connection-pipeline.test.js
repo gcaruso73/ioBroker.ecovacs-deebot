@@ -94,7 +94,7 @@ describe('connection-pipeline.test.js - Connection Flow and Protections', () => 
             this.isSupportedFeature = sinon.stub().returns(true);
             this.getProductName = sinon.stub().returns('Test Bot');
             this.getDeviceClass = sinon.stub().returns('test_class');
-            this.getDeviceType = sinon.stub().returns('Vacuum Cleaner');
+            this.getDeviceCategory = sinon.stub().returns('Vacuum Cleaner');
             this.getDeviceCapabilities = sinon.stub().returns({});
             this.getProductImageURL = sinon.stub().returns('');
             this.getProtocol = sinon.stub().returns('MQTT');
@@ -179,7 +179,7 @@ describe('connection-pipeline.test.js - Connection Flow and Protections', () => 
     it('1. connect() calls should be ignored when _connecting is true', async () => {
         instance._connecting = true;
         await instance.connect();
-        
+
         expect(instance.log.debug.calledWithMatch(/Connection already in progress/)).to.be.true;
         expect(mockEcoVacsAPI.prototype.connect.called).to.be.false;
     });
@@ -187,9 +187,9 @@ describe('connection-pipeline.test.js - Connection Flow and Protections', () => 
     it('2. connect() calls should be ignored when CONNECT_COOLDOWN_MS has not elapsed', async () => {
         instance._lastConnectTime = Date.now();
         clock.tick(mockConstants.CONNECT_COOLDOWN_MS - 1000);
-        
+
         await instance.connect();
-        
+
         expect(instance.log.debug.calledWithMatch(/Connect skipped - cooldown active/)).to.be.true;
         expect(mockEcoVacsAPI.prototype.connect.called).to.be.false;
     });
@@ -202,7 +202,7 @@ describe('connection-pipeline.test.js - Connection Flow and Protections', () => 
         mockEcoVacsAPI.prototype.devices.resolves(devices);
 
         const connectPromise = instance.connect();
-        
+
         // Wait for first device to be processed
         await clock.tickAsync(0);
         await Promise.resolve();
@@ -210,7 +210,7 @@ describe('connection-pipeline.test.js - Connection Flow and Protections', () => 
         await Promise.resolve();
         await Promise.resolve();
         expect(mockEcoVacsAPI.prototype.getVacBot.calledOnce).to.be.true;
-        
+
         // Advance clock by 30s
         await clock.tickAsync(30000);
         await Promise.resolve();
@@ -218,7 +218,7 @@ describe('connection-pipeline.test.js - Connection Flow and Protections', () => 
         await Promise.resolve();
         await Promise.resolve();
         expect(mockEcoVacsAPI.prototype.getVacBot.calledTwice).to.be.true;
-        
+
         await connectPromise;
     });
 
@@ -244,13 +244,13 @@ describe('connection-pipeline.test.js - Connection Flow and Protections', () => 
         // Test reconnect cleanup
         instance.reconnect();
         expect(mockVacbot.removeAllListeners.calledOnce).to.be.true;
-        
+
         // Re-add context for unload cleanup test
         instance.deviceContexts.set('test_device', mockCtx);
 
         // Test unload cleanup
         mockVacbot.removeAllListeners.resetHistory();
-        instance.onUnload(() => {});
+        instance.onUnload(() => { });
         expect(mockVacbot.removeAllListeners.calledOnce).to.be.true;
     });
 
@@ -259,16 +259,16 @@ describe('connection-pipeline.test.js - Connection Flow and Protections', () => 
             { did: 'device1', deviceName: 'Bot1' }
         ];
         mockEcoVacsAPI.prototype.devices.resolves(devices);
-        
+
         // Pre-fill deviceContexts
         const mockCtx = {
             deviceId: 'device1',
             vacuum: { did: 'device1' }
         };
         instance.deviceContexts.set('device1', mockCtx);
-        
+
         await instance.connect();
-        
+
         // Should NOT have called getVacBot for device1 because it already exists
         expect(mockEcoVacsAPI.prototype.getVacBot.called).to.be.false;
     });

@@ -135,7 +135,6 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
             this.getProtocol = sinon.stub().returns('MQTT/JSON');
             this.getProductName = sinon.stub().returns('Test Model');
             this.getDeviceClass = sinon.stub().returns('p1jij8');
-            this.getDeviceType = sinon.stub().returns('Vacuum Cleaner');
             this.getDeviceCapabilities = sinon.stub().returns({});
             this.getProductImageURL = sinon.stub().returns('');
             this.isSupportedFeature = sinon.stub().returns(false);
@@ -458,7 +457,6 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
                 getModel: () => ({
                     getProductName: () => 'Test Model',
                     getDeviceClass: () => 'test_class',
-                    getDeviceType: () => 'Test Type',
                     getDeviceCategory: () => 'Test Type',
                     getDeviceCapabilities: () => ({}),
                     getProductImageURL: () => '',
@@ -508,7 +506,6 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
                 getModel: () => ({
                     getProductName: () => 'Test Model',
                     getDeviceClass: () => 'test_class',
-                    getDeviceType: () => 'Test Type',
                     getDeviceCategory: () => 'Test Type',
                     getDeviceCapabilities: () => ({}),
                     getProductImageURL: () => '',

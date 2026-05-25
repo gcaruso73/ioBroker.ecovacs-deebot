@@ -79,7 +79,7 @@ describe('eventHandlers.js - deduplication checks', () => {
                 getModel: sinon.stub().returns({
                     is950type: sinon.stub().returns(false), getProtocol: sinon.stub().returns('MQTT/JSON'),
                     getProductName: sinon.stub().returns('Test Model'), getDeviceClass: sinon.stub().returns('p1jij8'),
-                    getDeviceType: sinon.stub().returns('Vacuum Cleaner'), isSupportedFeature: sinon.stub().returns(true),
+                    isSupportedFeature: sinon.stub().returns(true),
                     isMappingSupported: sinon.stub().returns(true), usesMqtt: sinon.stub().returns(true),
                     usesXmpp: sinon.stub().returns(false), isModelTypeT9Based: sinon.stub().returns(false),
                     isModelTypeT20: sinon.stub().returns(false), isModelTypeX2: sinon.stub().returns(false),

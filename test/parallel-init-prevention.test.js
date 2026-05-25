@@ -56,7 +56,6 @@ function buildEventHandlerFixtures() {
         getModel: sinon.stub().returns({
             getDeviceClass: sinon.stub().returns('p1jij8'),
             getProductName: sinon.stub().returns('Test Bot'),
-            getDeviceType: sinon.stub().returns('Vacuum Cleaner'),
             getDeviceCategory: sinon.stub().returns('Vacuum Cleaner'),
             getProtocol: sinon.stub().returns('MQTT'),
             is950type: sinon.stub().returns(true),
@@ -624,20 +623,20 @@ describe('parallel-init-prevention.test.js', () => {
         });
 
         it('onUnload clears ctx._initialGetStatesTimeout if set', () => {
-            const fakeTimer = setTimeout(() => {}, 60000);
+            const fakeTimer = setTimeout(() => { }, 60000);
             const ctx = {
                 vacbot: { disconnect: sinon.stub(), removeAllListeners: sinon.stub() },
                 _initialGetStatesTimeout: fakeTimer
             };
             instance.deviceContexts.set('dev', ctx);
-            instance.onUnload(() => {});
+            instance.onUnload(() => { });
 
             expect(ctx._initialGetStatesTimeout,
                 'unload should null out the tracked timer').to.equal(null);
         });
 
         it('reconnect() clears ctx._initialGetStatesTimeout if set', () => {
-            const fakeTimer = setTimeout(() => {}, 60000);
+            const fakeTimer = setTimeout(() => { }, 60000);
             const ctx = {
                 vacbot: { disconnect: sinon.stub(), removeAllListeners: sinon.stub() },
                 _initialGetStatesTimeout: fakeTimer,
