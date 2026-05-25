@@ -3,8 +3,8 @@
 const { expect } = require('chai');
 const { describe, it, beforeEach } = require('mocha');
 
-// Map from model type to user-friendly device type (mirrors modelTypes.js in the library)
-const LIBRARY_DEVICE_TYPE_MAP = {
+// Map from platform type to user-friendly device category (mirrors modelTypes.js in the library)
+const LIBRARY_DEVICE_CATEGORY_MAP = {
     'airbot': 'Air Purifier',
     'lawnMower': 'Lawn Mower',
     'aqMonitor': 'Air Quality Monitor',
@@ -35,10 +35,14 @@ class MockVacbot {
     }
 
     getDeviceProperty(property, defaultValue = false) {
-        if (property === 'deviceType') {
-            return LIBRARY_DEVICE_TYPE_MAP[this.modelType] || defaultValue;
+        if (property === 'deviceCategory') {
+            return LIBRARY_DEVICE_CATEGORY_MAP[this.modelType] || defaultValue;
         }
         return this.deviceProperties[property] !== undefined ? this.deviceProperties[property] : defaultValue;
+    }
+
+    getDeviceCategory() {
+        return LIBRARY_DEVICE_CATEGORY_MAP[this.modelType] || 'Unknown Device';
     }
 
     hasMappingCapabilities() {
@@ -74,13 +78,15 @@ class TestableModel {
         return this.vacbot.getModelType();
     }
 
-    getDeviceType() {
-        return this.vacbot.getDeviceProperty('deviceType', 'Unknown Device');
+    getDeviceCategory() {
+        return this.vacbot.getDeviceCategory
+            ? this.vacbot.getDeviceCategory()
+            : this.vacbot.getDeviceProperty('deviceCategory', 'Unknown Device');
     }
 
     getDeviceCapabilities() {
         return {
-            type: this.getDeviceType(),
+            type: this.getDeviceCategory(),
             hasMapping: this.vacbot.hasMappingCapabilities(),
             hasWaterBox: this.vacbot.isSupportedFeature('info.waterbox'),
             hasAirDrying: this.vacbot.hasAirDrying(),
@@ -95,85 +101,85 @@ class TestableModel {
 }
 
 describe('Device Type Classification', () => {
-    describe('getDeviceType()', () => {
+    describe('getDeviceCategory()', () => {
         it('should return "Air Purifier" for airbot model type', () => {
             const mockVacbot = new MockVacbot('airbot', '0b5f6y');
             const model = new TestableModel(mockVacbot);
             
-            const deviceType = model.getDeviceType();
-            expect(deviceType).to.equal('Air Purifier');
+            const deviceCategory = model.getDeviceCategory();
+            expect(deviceCategory).to.equal('Air Purifier');
         });
 
         it('should return "Lawn Mower" for lawnMower model type', () => {
             const mockVacbot = new MockVacbot('lawnMower', '5xu9h3');
             const model = new TestableModel(mockVacbot);
             
-            const deviceType = model.getDeviceType();
-            expect(deviceType).to.equal('Lawn Mower');
+            const deviceCategory = model.getDeviceCategory();
+            expect(deviceCategory).to.equal('Lawn Mower');
         });
 
         it('should return "Air Quality Monitor" for aqMonitor model type', () => {
             const mockVacbot = new MockVacbot('aqMonitor', 'aq1234');
             const model = new TestableModel(mockVacbot);
             
-            const deviceType = model.getDeviceType();
-            expect(deviceType).to.equal('Air Quality Monitor');
+            const deviceCategory = model.getDeviceCategory();
+            expect(deviceCategory).to.equal('Air Quality Monitor');
         });
 
         it('should return "Vacuum Cleaner" for yeedi model type', () => {
             const mockVacbot = new MockVacbot('yeedi', 'p5nx9u');
             const model = new TestableModel(mockVacbot);
             
-            const deviceType = model.getDeviceType();
-            expect(deviceType).to.equal('Vacuum Cleaner');
+            const deviceCategory = model.getDeviceCategory();
+            expect(deviceCategory).to.equal('Vacuum Cleaner');
         });
 
         it('should return "Vacuum Cleaner" for legacy model type', () => {
             const mockVacbot = new MockVacbot('legacy', '123');
             const model = new TestableModel(mockVacbot);
             
-            const deviceType = model.getDeviceType();
-            expect(deviceType).to.equal('Vacuum Cleaner');
+            const deviceCategory = model.getDeviceCategory();
+            expect(deviceCategory).to.equal('Vacuum Cleaner');
         });
 
         it('should return "Vacuum Cleaner" for 950 model type', () => {
             const mockVacbot = new MockVacbot('950', 'vi829v');
             const model = new TestableModel(mockVacbot);
             
-            const deviceType = model.getDeviceType();
-            expect(deviceType).to.equal('Vacuum Cleaner');
+            const deviceCategory = model.getDeviceCategory();
+            expect(deviceCategory).to.equal('Vacuum Cleaner');
         });
 
         it('should return "Vacuum Cleaner" for T8 model type', () => {
             const mockVacbot = new MockVacbot('T8', 'h18jkh');
             const model = new TestableModel(mockVacbot);
             
-            const deviceType = model.getDeviceType();
-            expect(deviceType).to.equal('Vacuum Cleaner');
+            const deviceCategory = model.getDeviceCategory();
+            expect(deviceCategory).to.equal('Vacuum Cleaner');
         });
 
         it('should return "Vacuum Cleaner" for T20 model type', () => {
             const mockVacbot = new MockVacbot('T20', '3yqsch');
             const model = new TestableModel(mockVacbot);
             
-            const deviceType = model.getDeviceType();
-            expect(deviceType).to.equal('Vacuum Cleaner');
+            const deviceCategory = model.getDeviceCategory();
+            expect(deviceCategory).to.equal('Vacuum Cleaner');
         });
 
         it('should return "Vacuum Cleaner" for X1 model type', () => {
             const mockVacbot = new MockVacbot('X1', '3yqsch');
             const model = new TestableModel(mockVacbot);
             
-            const deviceType = model.getDeviceType();
-            expect(deviceType).to.equal('Vacuum Cleaner');
+            const deviceCategory = model.getDeviceCategory();
+            expect(deviceCategory).to.equal('Vacuum Cleaner');
         });
 
         it('should return "Unknown Device" for unknown model type', () => {
             const mockVacbot = new MockVacbot('unknown', 'unknown');
             const model = new TestableModel(mockVacbot);
             
-            const deviceType = model.getDeviceType();
-            expect(deviceType).to.equal('Unknown Device');
+            const deviceCategory = model.getDeviceCategory();
+            expect(deviceCategory).to.equal('Unknown Device');
         });
     });
 
@@ -279,24 +285,24 @@ describe('Device Type Classification', () => {
             const mockVacbot = new MockVacbot(null, 'unknown');
             const model = new TestableModel(mockVacbot);
             
-            const deviceType = model.getDeviceType();
-            expect(deviceType).to.equal('Unknown Device');
+            const deviceCategory = model.getDeviceCategory();
+            expect(deviceCategory).to.equal('Unknown Device');
         });
 
         it('should handle undefined model type gracefully', () => {
             const mockVacbot = new MockVacbot(undefined, 'unknown');
             const model = new TestableModel(mockVacbot);
             
-            const deviceType = model.getDeviceType();
-            expect(deviceType).to.equal('Unknown Device');
+            const deviceCategory = model.getDeviceCategory();
+            expect(deviceCategory).to.equal('Unknown Device');
         });
 
         it('should handle empty string model type gracefully', () => {
             const mockVacbot = new MockVacbot('', 'unknown');
             const model = new TestableModel(mockVacbot);
             
-            const deviceType = model.getDeviceType();
-            expect(deviceType).to.equal('Unknown Device');
+            const deviceCategory = model.getDeviceCategory();
+            expect(deviceCategory).to.equal('Unknown Device');
         });
     });
 
