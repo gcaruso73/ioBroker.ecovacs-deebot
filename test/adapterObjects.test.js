@@ -56,6 +56,75 @@ describe('adapterObjects.js', () => {
             expect(ctx.adapterProxy.createObjectNotExists.calledWith('info.library.canvasModuleIsInstalled')).to.be.true;
             expect(ctx.adapterProxy.createObjectNotExists.calledWith('info.library.communicationProtocol')).to.be.true;
         });
+
+        it('should create top-level device object if it does not exist', async () => {
+            adapter.getObjectAsync.resolves(null);
+            ctx.deviceId = 'my_test_deebot';
+            ctx.vacuum.nick = 'My Friendly Vacuum';
+
+            await adapterObjects.createInitialInfoObjects(adapter, ctx);
+
+            expect(adapter.setObjectNotExistsAsync.calledWith('my_test_deebot', sinon.match({
+                type: 'device',
+                common: {
+                    name: 'My Friendly Vacuum'
+                }
+            }))).to.be.true;
+        });
+
+        it('should update top-level device object if type is not device or name is missing/default', async () => {
+            adapter.getObjectAsync.resolves({
+                type: 'folder',
+                common: {
+                    name: 'my_test_deebot'
+                }
+            });
+            ctx.deviceId = 'my_test_deebot';
+            ctx.vacuum.nick = 'My Friendly Vacuum';
+
+            await adapterObjects.createInitialInfoObjects(adapter, ctx);
+
+            expect(adapter.extendObjectAsync.calledWith('my_test_deebot', sinon.match({
+                type: 'device',
+                common: {
+                    name: 'My Friendly Vacuum'
+                }
+            }))).to.be.true;
+        });
+
+        it('should not update top-level device object if it already has a custom name', async () => {
+            adapter.getObjectAsync.resolves({
+                type: 'device',
+                common: {
+                    name: 'User Custom Name'
+                }
+            });
+            ctx.deviceId = 'my_test_deebot';
+            ctx.vacuum.nick = 'My Friendly Vacuum';
+
+            adapter.setObjectNotExistsAsync.resetHistory();
+            adapter.extendObjectAsync.resetHistory();
+
+            await adapterObjects.createInitialInfoObjects(adapter, ctx);
+
+            expect(adapter.setObjectNotExistsAsync.calledWith('my_test_deebot')).to.be.false;
+            expect(adapter.extendObjectAsync.calledWith('my_test_deebot')).to.be.false;
+        });
+
+        it('should skip creating top-level device object in single device mode (skipPrefix)', async () => {
+            ctx.skipPrefix = true;
+            ctx.deviceId = 'my_test_deebot';
+
+            adapter.getObjectAsync.resetHistory();
+            adapter.setObjectNotExistsAsync.resetHistory();
+            adapter.extendObjectAsync.resetHistory();
+
+            await adapterObjects.createInitialInfoObjects(adapter, ctx);
+
+            expect(adapter.getObjectAsync.calledWith('my_test_deebot')).to.be.false;
+            expect(adapter.setObjectNotExistsAsync.calledWith('my_test_deebot')).to.be.false;
+            expect(adapter.extendObjectAsync.calledWith('my_test_deebot')).to.be.false;
+        });
     });
 
     describe('createInitialObjects', () => {
