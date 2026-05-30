@@ -15,5 +15,5 @@ const sinon = require('sinon');
 sinon.leakThreshold = 200000;
 
 should();
-use(sinonChai);
-use(chaiAsPromised);
+use(sinonChai.default || sinonChai);
+use(chaiAsPromised.default || chaiAsPromised);
