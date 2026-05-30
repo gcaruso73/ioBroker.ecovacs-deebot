@@ -97,6 +97,8 @@ describe('Capability and Station States', () => {
                 const vacbot = {
                     deviceClass: 'test',
                     getModelType: sinon.stub().returns('950'),
+                    getPlatformType: sinon.stub().returns('950'),
+                    getDeviceCategory: sinon.stub().returns('Vacuum Cleaner'),
                     hasMappingCapabilities: sinon.stub().returns(true),
                     isSupportedFeature: sinon.stub().returns(true),
                     hasAirDrying: sinon.stub().returns(true),
@@ -115,6 +117,8 @@ describe('Capability and Station States', () => {
                 const vacbot = {
                     deviceClass: 'test',
                     getModelType: sinon.stub().returns('legacy'),
+                    getPlatformType: sinon.stub().returns('legacy'),
+                    getDeviceCategory: sinon.stub().returns('Vacuum Cleaner'),
                     hasMappingCapabilities: sinon.stub().returns(false),
                     isSupportedFeature: sinon.stub().returns(false),
                     hasAirDrying: sinon.stub().returns(false),

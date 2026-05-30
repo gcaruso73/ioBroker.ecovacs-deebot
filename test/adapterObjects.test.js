@@ -170,6 +170,7 @@ describe('adapterObjects.js', () => {
             expect(ctx.adapterProxy.createObjectNotExists.calledWith('control.charge')).to.be.true;
             expect(ctx.adapterProxy.createObjectNotExists.calledWith('control.stop')).to.be.true;
         });
+
     });
 
     describe('createAdditionalObjects', () => {

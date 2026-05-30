@@ -174,6 +174,8 @@ function createMockCtx(overrides = {}) {
     // Build the vacbot mock
     const vacbot = Object.assign({
         run: sinon.stub(),
+        getPlatformType: sinon.stub().returns('950'),
+        getDeviceCategory: sinon.stub().returns('Vacuum Cleaner'),
         hasMoppingSystem: sinon.stub().returns(true),
         hasMainBrush: sinon.stub().returns(true),
         hasSpotAreaCleaningMode: sinon.stub().returns(true),
