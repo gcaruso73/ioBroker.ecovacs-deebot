@@ -8,11 +8,6 @@ process.on('unhandledRejection', (e) => {
 const sinonChai = require('sinon-chai');
 const chaiAsPromised = require('chai-as-promised');
 const { should, use } = require('chai');
-const sinon = require('sinon');
-
-// Increase sinon leak threshold to accommodate the large number of stubs
-// created across the comprehensive test suite
-sinon.leakThreshold = 200000;
 
 should();
 use(sinonChai.default || sinonChai);

@@ -5,92 +5,90 @@ const { describe, it } = require('mocha');
 
 const C = require('../lib/constants');
 
+/**
+ * constants.test.js
+ *
+ * Tests focus on *invariants*, not exact values:
+ *  - All delay/timeout constants must be positive numbers
+ *  - The backoff schedule must be a strictly increasing array
+ *  - Threshold and count constants must be positive integers
+ *  - READY_DEBOUNCE_MS must exist and be positive (consumed by parallel-init-prevention tests)
+ *
+ * Exact millisecond values are NOT tested here because they are tuning parameters
+ * that may legitimately change without altering any observable behaviour.
+ */
+
 describe('constants.js', () => {
-    it('INITIAL_GET_COMMANDS_DELAY_MS should be 6000', () => {
-        expect(C.INITIAL_GET_COMMANDS_DELAY_MS).to.equal(6000);
-    });
+    const DELAY_KEYS = [
+        'INITIAL_GET_COMMANDS_DELAY_MS',
+        'LAST_CHARGE_STATUS_RESET_DELAY_MS',
+        'POST_SETTING_DELAY_MS',
+        'POSITION_THROTTLE_MS',
+        'COMMAND_FAILURE_RESET_TIMEOUT_MS',
+        'RECOVERY_DEBOUNCE_MS',
+        'RECOVERY_REFETCH_DELAY_MS',
+        'ERROR_WRITE_DEBOUNCE_MS',
+        'RECONNECT_COOLDOWN_MS',
+        'AIR_DRYING_RESET_DELAY_MS',
+        'AIR_DRYING_INTERVAL_MS',
+        'MIN_POLLING_INTERVAL_MS',
+        'READY_DEBOUNCE_MS'
+    ];
 
-    it('LAST_CHARGE_STATUS_RESET_DELAY_MS should be 3000', () => {
-        expect(C.LAST_CHARGE_STATUS_RESET_DELAY_MS).to.equal(3000);
-    });
+    describe('all timing constants', () => {
+        it('should be positive numbers', () => {
+            for (const key of DELAY_KEYS) {
+                expect(C[key], key).to.be.a('number').and.to.be.greaterThan(0);
+            }
+        });
 
-    it('POST_SETTING_DELAY_MS should be 100', () => {
-        expect(C.POST_SETTING_DELAY_MS).to.equal(100);
-    });
-
-    it('POSITION_THROTTLE_MS should be 2000', () => {
-        expect(C.POSITION_THROTTLE_MS).to.equal(2000);
-    });
-
-    it('COMMAND_FAILURE_RESET_TIMEOUT_MS should be 60000', () => {
-        expect(C.COMMAND_FAILURE_RESET_TIMEOUT_MS).to.equal(60000);
-    });
-
-    it('CONSECUTIVE_FAILURE_THRESHOLD should be 2', () => {
-        expect(C.CONSECUTIVE_FAILURE_THRESHOLD).to.equal(2);
-    });
-
-    it('RECOVERY_DEBOUNCE_MS should be 5000', () => {
-        expect(C.RECOVERY_DEBOUNCE_MS).to.equal(5000);
-    });
-
-    it('RECOVERY_REFETCH_DELAY_MS should be 2000', () => {
-        expect(C.RECOVERY_REFETCH_DELAY_MS).to.equal(2000);
-    });
-
-    it('ERROR_WRITE_DEBOUNCE_MS should be 5000', () => {
-        expect(C.ERROR_WRITE_DEBOUNCE_MS).to.equal(5000);
-    });
-
-    it('RECONNECT_COOLDOWN_MS should be 60000', () => {
-        expect(C.RECONNECT_COOLDOWN_MS).to.equal(60000);
-    });
-
-    it('AIR_DRYING_RESET_DELAY_MS should be 60000', () => {
-        expect(C.AIR_DRYING_RESET_DELAY_MS).to.equal(60000);
-    });
-
-    it('AIR_DRYING_INTERVAL_MS should be 60000', () => {
-        expect(C.AIR_DRYING_INTERVAL_MS).to.equal(60000);
-    });
-
-    it('BACKOFF_SCHEDULE should be [30000, 60000, 300000]', () => {
-        expect(C.BACKOFF_SCHEDULE).to.deep.equal([30000, 60000, 300000]);
-    });
-
-    it('MIN_POLLING_INTERVAL_MS should be 60000', () => {
-        expect(C.MIN_POLLING_INTERVAL_MS).to.equal(60000);
-    });
-
-    it('FORMATTED_DATE_THROTTLE_S should be 60', () => {
-        expect(C.FORMATTED_DATE_THROTTLE_S).to.equal(60);
-    });
-
-    it('READY_DEBOUNCE_MS should be a positive number', () => {
-        expect(C.READY_DEBOUNCE_MS).to.be.a('number').and.to.be.greaterThan(0);
-    });
-
-    it('should have exactly 19 exported constants', () => {
-        expect(Object.keys(C)).to.have.lengthOf(19);
-    });
-
-    it('all delay constants should be positive', () => {
-        [
-            'INITIAL_GET_COMMANDS_DELAY_MS', 'LAST_CHARGE_STATUS_RESET_DELAY_MS',
-            'POST_SETTING_DELAY_MS', 'POSITION_THROTTLE_MS',
-            'COMMAND_FAILURE_RESET_TIMEOUT_MS', 'RECOVERY_DEBOUNCE_MS',
-            'RECOVERY_REFETCH_DELAY_MS', 'ERROR_WRITE_DEBOUNCE_MS',
-            'RECONNECT_COOLDOWN_MS', 'AIR_DRYING_RESET_DELAY_MS',
-            'AIR_DRYING_INTERVAL_MS', 'MIN_POLLING_INTERVAL_MS',
-            'FORMATTED_DATE_THROTTLE_S', 'READY_DEBOUNCE_MS'
-        ].forEach(key => {
-            expect(C[key], key + ' should be > 0').to.be.greaterThan(0);
+        it('FORMATTED_DATE_THROTTLE_S should be a positive number (seconds unit)', () => {
+            expect(C.FORMATTED_DATE_THROTTLE_S).to.be.a('number').and.to.be.greaterThan(0);
         });
     });
 
-    it('BACKOFF_SCHEDULE should have increasing values', () => {
-        for (let i = 1; i < C.BACKOFF_SCHEDULE.length; i++) {
-            expect(C.BACKOFF_SCHEDULE[i]).to.be.greaterThan(C.BACKOFF_SCHEDULE[i - 1]);
-        }
+    describe('BACKOFF_SCHEDULE', () => {
+        it('should be a non-empty array', () => {
+            expect(C.BACKOFF_SCHEDULE).to.be.an('array').with.length.greaterThan(0);
+        });
+
+        it('should contain only positive numbers', () => {
+            C.BACKOFF_SCHEDULE.forEach((v, i) => {
+                expect(v, `BACKOFF_SCHEDULE[${i}]`).to.be.a('number').and.to.be.greaterThan(0);
+            });
+        });
+
+        it('should be strictly increasing (longer retries as backoff progresses)', () => {
+            for (let i = 1; i < C.BACKOFF_SCHEDULE.length; i++) {
+                expect(C.BACKOFF_SCHEDULE[i], `slot ${i} > slot ${i - 1}`)
+                    .to.be.greaterThan(C.BACKOFF_SCHEDULE[i - 1]);
+            }
+        });
+    });
+
+    describe('threshold constants', () => {
+        it('CONSECUTIVE_FAILURE_THRESHOLD should be a positive integer', () => {
+            expect(C.CONSECUTIVE_FAILURE_THRESHOLD).to.be.a('number')
+                .and.to.satisfy(n => Number.isInteger(n) && n > 0, 'positive integer');
+        });
+    });
+
+    describe('module shape', () => {
+        it('should export only numbers and arrays (no accidental string/object exports)', () => {
+            for (const [key, value] of Object.entries(C)) {
+                expect(value, `export "${key}"`).to.satisfy(
+                    v => typeof v === 'number' || Array.isArray(v),
+                    'must be a number or array'
+                );
+            }
+        });
+
+        it('should have READY_DEBOUNCE_MS (required by parallel-init-prevention)', () => {
+            expect(C).to.have.property('READY_DEBOUNCE_MS').that.is.a('number').and.greaterThan(0);
+        });
+
+        it('should have INITIAL_GET_COMMANDS_DELAY_MS (required by parallel-init-prevention)', () => {
+            expect(C).to.have.property('INITIAL_GET_COMMANDS_DELAY_MS').that.is.a('number').and.greaterThan(0);
+        });
     });
 });

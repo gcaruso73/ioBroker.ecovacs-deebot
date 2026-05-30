@@ -9,6 +9,10 @@ const sinon = require('sinon');
 const adapterHelper = require('../lib/adapterHelper');
 
 describe('adapterHelper.js', () => {
+    afterEach(() => {
+        sinon.restore();
+    });
+
     describe('decrypt', () => {
         it('should decrypt a simple string correctly', () => {
             const key = 'testkey';
@@ -424,13 +428,24 @@ describe('adapterHelper.js', () => {
             expect(decrypted).to.equal(original);
         });
 
-        it('should handle null and undefined inputs gracefully', () => {
-            expect(adapterHelper.isIdValid(null)).to.be.true; // Regex matches null
-            expect(adapterHelper.isIdValid(undefined)).to.be.true; // Regex matches undefined
-            // These functions crash on null/undefined, so we expect them to throw
-            expect(() => adapterHelper.getChannelNameById(null)).to.throw();
-            expect(() => adapterHelper.getSubChannelNameById(undefined)).to.throw();
-            expect(() => adapterHelper.getStateNameById(null)).to.throw();
+        it('should handle null and undefined inputs: isIdValid coerces to string', () => {
+            // Known behaviour: the regex test coerces null → "null" and
+            // undefined → "undefined", both of which happen to match the
+            // allowed-character pattern. This is a limitation of the current
+            // implementation; callers are expected to guard against non-strings.
+            expect(adapterHelper.isIdValid(null)).to.be.true;
+            expect(adapterHelper.isIdValid(undefined)).to.be.true;
+        });
+
+        it('should throw TypeError for null/undefined in id-parsing helpers', () => {
+            // These helpers call String.prototype.split on the argument.
+            // Passing null/undefined causes a TypeError – callers must validate input first.
+            expect(() => adapterHelper.getChannelNameById(null)).to.throw(TypeError);
+            expect(() => adapterHelper.getSubChannelNameById(undefined)).to.throw(TypeError);
+            expect(() => adapterHelper.getStateNameById(null)).to.throw(TypeError);
+        });
+
+        it('positionValueStringIsValid should return false for null', () => {
             expect(adapterHelper.positionValueStringIsValid(null)).to.be.false;
         });
 

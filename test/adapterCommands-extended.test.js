@@ -70,6 +70,10 @@ describe('adapterCommands.js extended', () => {
         });
     });
 
+    afterEach(() => {
+        sinon.restore();
+    });
+
     describe('handleV2commands', () => {
         it('should return original command when V2 is disabled', () => {
             ctx.getDevice().useV2commands.returns(false);

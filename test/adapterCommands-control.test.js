@@ -83,6 +83,10 @@ describe('adapterCommands.js - control command dispatch with real path resolutio
         mockAdapterHelper.getDeviceStatusByStatus.resetHistory();
     });
 
+    afterEach(() => {
+        sinon.restore();
+    });
+
     // ======================================================================
     // Tests verifying that the REAL getChannelNameById works correctly
     // with the helperId reconstruction (ctx.deviceId + '.' + id) in handleStateChange

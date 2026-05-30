@@ -279,7 +279,9 @@ describe('main.js - comprehensive coverage', () => {
 
     afterEach(() => {
         clock.restore();
+        sinon.restore();
     });
+
 
     describe('onMessage', () => {
         it('should handle loginAndFetchDevices', async () => {

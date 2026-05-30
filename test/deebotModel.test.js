@@ -45,6 +45,10 @@ describe('deebotModel', () => {
         model = new Model(mockVacbot, {});
     });
 
+    afterEach(() => {
+        sinon.restore();
+    });
+
     describe('Hardware capabilities', () => {
         it('should correctly report getProductImageURL', () => {
             expect(model.getProductImageURL()).to.equal('http://example.com/image.png');
