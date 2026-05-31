@@ -21,6 +21,7 @@ function createMockModel(overrides = {}) {
         isModelTypeT9Based: sinon.stub().returns(false),
         getModelType: sinon.stub().returns('950'),
         getPlatformType: sinon.stub().returns('950'),
+        getSmartType: sinon.stub().returns('950'),
 
         // Feature checks
         isSupportedFeature: sinon.stub().returns(true),
@@ -175,6 +176,7 @@ function createMockCtx(overrides = {}) {
     const vacbot = Object.assign({
         run: sinon.stub(),
         getPlatformType: sinon.stub().returns('950'),
+        getSmartType: sinon.stub().returns('950'),
         getDeviceCategory: sinon.stub().returns('Vacuum Cleaner'),
         hasMoppingSystem: sinon.stub().returns(true),
         hasMainBrush: sinon.stub().returns(true),
@@ -202,6 +204,7 @@ function createMockCtx(overrides = {}) {
         getModel: sinon.stub().returns(model),
         getModelType: sinon.stub().returns('950'),
         getPlatformType: sinon.stub().returns('950'),
+        getSmartType: sinon.stub().returns('950'),
         getDevice: sinon.stub().returns(device),
 
         // Queues (lightweight stubs - tests that need real Queue behaviour should

@@ -9,6 +9,7 @@ function createMockVacbot(overrides = {}) {
     return Object.assign({
         deviceClass: 'unknown_class',
         getPlatformType: sinon.stub().returns(''),
+        getSmartType: sinon.stub().returns(''),
         getModelType: sinon.stub().returns(''),
         getDeviceCategory: sinon.stub().returns('Vacuum Cleaner'),
         getProductImageURL: sinon.stub().returns('http://example.com/image.png'),
@@ -130,6 +131,14 @@ describe('deebotModel', () => {
 
             const nullModel = new Model(null, {});
             expect(nullModel.getPlatformType()).to.equal('');
+        });
+
+        it('should report getSmartType', () => {
+            mockVacbot.getSmartType.returns('T8');
+            expect(model.getSmartType()).to.equal('T8');
+
+            const nullModel = new Model(null, {});
+            expect(nullModel.getSmartType()).to.equal('');
         });
 
         it('should report T8 based models', () => {

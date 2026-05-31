@@ -123,9 +123,11 @@ describe('eventHandlers.js - functionality', () => {
                 isModelTypeN8: () => false,
                 isModelTypeT9: () => false,
                 isModelTypeT10: () => false,
-                isModelTypeAqMonitor: () => false
+                isModelTypeAqMonitor: () => false,
+                getSmartType: () => '950'
             }),
             getPlatformType: sinon.stub().returns('950'),
+            getSmartType: sinon.stub().returns('950'),
             getDevice: sinon.stub().returns({
                 isNotStopped: () => true,
                 isNotCharging: sinon.stub().returns(true),

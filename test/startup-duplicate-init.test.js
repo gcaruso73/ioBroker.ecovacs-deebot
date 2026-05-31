@@ -147,6 +147,7 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
             this.isModelTypeAirbot = sinon.stub().returns(false);
             this.getModelType = sinon.stub().returns('950');
             this.getPlatformType = sinon.stub().returns('950');
+            this.getSmartType = sinon.stub().returns('950');
             this.getDeviceCategory = sinon.stub().returns('Vacuum Cleaner');
         }
     };
@@ -209,6 +210,7 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
             this.getDevice = sinon.stub().returns(new mockDevice());
             this.getModelType = sinon.stub().returns('950');
             this.getPlatformType = sinon.stub().returns('950');
+            this.getSmartType = sinon.stub().returns('950');
             this.statePath = sinon.stub().returnsArg(0);
             this.adapterProxy = {
                 setStateConditional: sinon.stub(),
@@ -462,10 +464,12 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
                     getProductImageURL: () => '',
                     getProtocol: () => 'MQTT',
                     is950type: () => true,
-                    getModelType: () => '950'
+                    getModelType: () => '950',
+                    getSmartType: () => '950'
                 }),
                 getModelType: () => '950',
                 getPlatformType: () => '950',
+                getSmartType: () => '950',
                 api: { getVersion: () => '0.9.6' }
             };
 
@@ -511,10 +515,12 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
                     getProductImageURL: () => '',
                     getProtocol: () => 'MQTT',
                     is950type: () => true,
-                    getModelType: () => '950'
+                    getModelType: () => '950',
+                    getSmartType: () => '950'
                 }),
                 getModelType: () => '950',
                 getPlatformType: () => '950',
+                getSmartType: () => '950',
                 api: { getVersion: () => '0.9.6' }
             };
 

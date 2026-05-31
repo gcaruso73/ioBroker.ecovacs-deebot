@@ -35,6 +35,7 @@ describe('adapterObjects.js', () => {
             expect(ctx.adapterProxy.createObjectNotExists.calledWith('info.version')).to.be.true;
             expect(ctx.adapterProxy.createObjectNotExists.calledWith('info.deviceName')).to.be.true;
             expect(ctx.adapterProxy.createObjectNotExists.calledWith('info.deviceCategory')).to.be.true;
+            expect(ctx.adapterProxy.createObjectNotExists.calledWith('info.smartType')).to.be.true;
             expect(ctx.adapterProxy.createObjectNotExists.calledWith('info.deviceDiscovery')).to.be.true;
             expect(ctx.adapterProxy.createObjectNotExists.calledWith('info.connection')).to.be.true;
         });

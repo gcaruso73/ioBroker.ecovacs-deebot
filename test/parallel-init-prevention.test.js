@@ -66,10 +66,12 @@ function buildEventHandlerFixtures() {
                 hasDoNotDisturb: false, hasVoiceAssistant: false,
                 hasCleaningStation: false, hasFloorWashing: false
             }),
-            getProductImageURL: sinon.stub().returns('')
+            getProductImageURL: sinon.stub().returns(''),
+            getSmartType: sinon.stub().returns('T20')
         }),
         getModelType: sinon.stub().returns('T20'),
         getPlatformType: sinon.stub().returns('T20'),
+        getSmartType: sinon.stub().returns('T20'),
         adapterProxy: {
             setStateConditional: sinon.stub(),
             createObjectNotExists: sinon.stub().resolves()
