@@ -40,6 +40,17 @@ function createMockVacbot(deviceClass, modelType, overrides = {}) {
 }
 
 describe('Missing device class support in SUPPORTED_STATES', () => {
+    describe('p95mgv (DEEBOT T10 PLUS)', () => {
+        const deviceClass = 'p95mgv';
+        const modelType = 'T10';
+
+        it('should resolve product name via deviceClassLink', () => {
+            const vacbot = createMockVacbot(deviceClass, modelType);
+            const model = new Model(vacbot, {});
+            expect(model.getProductName()).to.equal('DEEBOT T10 PLUS');
+        });
+    });
+
     describe('20anby (Z1 Air Quality Monitor)', () => {
         const deviceClass = '20anby';
         const modelType = 'aqMonitor';
@@ -48,6 +59,30 @@ describe('Missing device class support in SUPPORTED_STATES', () => {
             const vacbot = createMockVacbot(deviceClass, modelType);
             const model = new Model(vacbot, {});
             expect(model.getProductName()).to.equal('Z1 Air Quality Monitor');
+        });
+    });
+
+    describe('9eamof (DEEBOT T80 OMNI)', () => {
+        const deviceClass = '9eamof';
+        const modelType = 'T10';
+
+        it('should resolve product name via deviceClassLink', () => {
+            const vacbot = createMockVacbot(deviceClass, modelType);
+            const model = new Model(vacbot, {});
+            expect(model.getProductName()).to.equal('DEEBOT T80 OMNI');
+        });
+    });
+
+    describe('p1jij8 (DEEBOT T20 OMNI)', () => {
+        const deviceClass = 'p1jij8';
+        const modelType = 'T20';
+
+        it('should resolve product name via deviceClassLink', () => {
+            const vacbot = createMockVacbot(deviceClass, modelType, {
+                isModelTypeT20: sinon.stub().returns(true)
+            });
+            const model = new Model(vacbot, {});
+            expect(model.getProductName()).to.equal('DEEBOT T20 OMNI');
         });
     });
 
@@ -63,6 +98,39 @@ describe('Missing device class support in SUPPORTED_STATES', () => {
             });
             const model = new Model(vacbot, {});
             expect(model.getProductName()).to.equal('AIRBOT Z1');
+        });
+    });
+
+    describe('ipohi5 (DEEBOT T9)', () => {
+        const deviceClass = 'ipohi5';
+        const modelType = 'T9';
+
+        it('should resolve product name via deviceClassLink', () => {
+            const vacbot = createMockVacbot(deviceClass, modelType);
+            const model = new Model(vacbot, {});
+            expect(model.getProductName()).to.equal('DEEBOT T9');
+        });
+    });
+
+    describe('lhbd50 (DEEBOT T9+)', () => {
+        const deviceClass = 'lhbd50';
+        const modelType = 'T9';
+
+        it('should resolve product name via deviceClassLink', () => {
+            const vacbot = createMockVacbot(deviceClass, modelType);
+            const model = new Model(vacbot, {});
+            expect(model.getProductName()).to.equal('DEEBOT T9+');
+        });
+    });
+
+    describe('um2ywg (DEEBOT T9+)', () => {
+        const deviceClass = 'um2ywg';
+        const modelType = 'T9';
+
+        it('should resolve product name via deviceClassLink', () => {
+            const vacbot = createMockVacbot(deviceClass, modelType);
+            const model = new Model(vacbot, {});
+            expect(model.getProductName()).to.equal('DEEBOT T9+');
         });
     });
 });
