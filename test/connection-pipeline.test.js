@@ -161,7 +161,7 @@ describe('connection-pipeline.test.js - Connection Flow and Protections', () => 
             'node-machine-id': mockNodeMachineId,
             './lib/adapterObjects': mockAdapterObjects,
             './lib/constants': mockConstants,
-            './lib/deebotModel': mockDeebotModel,
+            './lib/models': mockDeebotModel,
             './lib/device': mockDevice,
             './lib/deviceContext': mockDeviceContext,
             './lib/eventHandlers': mockEventHandlers,

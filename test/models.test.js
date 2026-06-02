@@ -3,7 +3,7 @@
 const { expect } = require('chai');
 const { describe, it, beforeEach } = require('mocha');
 const sinon = require('sinon');
-const Model = require('../lib/deebotModel');
+const Model = require('../lib/models');
 
 function createMockVacbot(overrides = {}) {
     return Object.assign({
@@ -37,7 +37,7 @@ function createMockVacbot(overrides = {}) {
     }, overrides);
 }
 
-describe('deebotModel', () => {
+describe('models', () => {
     let mockVacbot;
     let model;
 

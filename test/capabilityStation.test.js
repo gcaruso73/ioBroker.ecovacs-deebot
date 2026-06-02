@@ -18,7 +18,7 @@ const adapterObjects = proxyquire('../lib/adapterObjects', {
     './adapterHelper': mockHelper
 });
 
-const Model = require('../lib/deebotModel');
+const Model = require('../lib/models');
 
 describe('Capability and Station States', () => {
     let adapter;
@@ -30,9 +30,9 @@ describe('Capability and Station States', () => {
     });
 
     // ============================================================
-    // deebotModel.js
+    // models.js
     // ============================================================
-    describe('deebotModel.js', () => {
+    describe('models.js', () => {
         describe('hasCleaningStation()', () => {
             it('should return true when vacbot has air drying', () => {
                 const vacbot = {

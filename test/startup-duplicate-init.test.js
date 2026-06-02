@@ -308,7 +308,7 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
             './lib/adapterCommands': mockAdapterCommands,
             './lib/constants': mockConstants,
             './lib/adapterHelper': mockAdapterHelper,
-            './lib/deebotModel': mockDeebotModel,
+            './lib/models': mockDeebotModel,
             './lib/device': mockDevice,
             './lib/deviceContext': mockDeviceContext,
             './lib/requestThrottle': mockRequestThrottle,

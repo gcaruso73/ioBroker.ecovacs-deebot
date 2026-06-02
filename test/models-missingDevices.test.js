@@ -3,7 +3,7 @@
 const { expect } = require('chai');
 const { describe, it } = require('mocha');
 const sinon = require('sinon');
-const Model = require('../lib/deebotModel');
+const Model = require('../lib/models');
 
 // TODO: Fully implement capability and feature tests for these devices once the model concept is completed.
 
