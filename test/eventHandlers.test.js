@@ -70,6 +70,8 @@ describe('eventHandlers.js - functionality', () => {
             setHistoryValuesForDustboxRemoval: sinon.stub(),
             addToLast20Errors: sinon.stub(),
             setGlobalMqttUnreachable: sinon.stub(),
+            clearGlobalMqttUnreachable: sinon.stub(),
+            startPolling: sinon.stub(),
             handleDeviceDataReceived: sinon.stub(),
             canvasModuleIsInstalled: false
         };
@@ -282,6 +284,12 @@ describe('eventHandlers.js - functionality', () => {
             expect(main.setGlobalMqttUnreachable.calledOnce).to.be.true;
         });
 
+        it('LastError when disconnecting - should ignore the event', () => {
+            ctx.disconnecting = true;
+            events.LastError({ code: '500', error: 'MQTT server is offline or not reachable' });
+            expect(main.setGlobalMqttUnreachable.called).to.be.false;
+        });
+
         it('Debug - should update library debugMessage state', () => {
             events.Debug('debug message');
             expect(ctx.adapterProxy.setStateConditional.calledWith(
@@ -311,6 +319,14 @@ describe('eventHandlers.js - functionality', () => {
             expect(ctx.connected).to.be.false;
             expect(main.scheduleUnreachableRetry.calledOnce).to.be.true;
         });
+
+        it('disconnect when disconnecting - should ignore the event', () => {
+            ctx.connected = true;
+            ctx.disconnecting = true;
+            events.disconnect('some error');
+            expect(ctx.connected).to.be.true;
+            expect(main.scheduleUnreachableRetry.called).to.be.false;
+        });
     });
 
     // -------------------------------------------------------------------------
@@ -334,6 +350,21 @@ describe('eventHandlers.js - functionality', () => {
 
             expect(ctx.connected).to.be.true;
             expect(ctx._readyInitDone).to.be.true;
+        });
+
+        it('should clear global MQTT unreachable state on ready event if set', () => {
+            main.globalMqttUnreachable = true;
+            eventHandlers.registerReadyEvent(main, vacbot, ctx, vacuum);
+            events.ready();
+            expect(main.clearGlobalMqttUnreachable.calledOnce).to.be.true;
+        });
+
+        it('should start polling on reconnect (light path) of ready event', () => {
+            ctx._readyInitDone = true;
+            ctx.enabled = true;
+            eventHandlers.registerReadyEvent(main, vacbot, ctx, vacuum);
+            events.ready();
+            expect(main.startPolling.calledWith(ctx)).to.be.true;
         });
     });
 
