@@ -658,6 +658,15 @@ class EcovacsDeebot extends utils.Adapter {
         this.globalMqttUnreachableCount = 0;
         this.globalMqttOfflineWarningSent = false;
 
+        for (const deviceCtx of this.deviceContexts.values()) {
+            if (deviceCtx.connectionFailed) {
+                this.clearUnreachableRetry(deviceCtx);
+                if (deviceCtx.enabled) {
+                    this.startPolling(deviceCtx);
+                }
+            }
+        }
+
         if (this.globalMqttUnreachableTimeout) {
             clearTimeout(this.globalMqttUnreachableTimeout);
             this.globalMqttUnreachableTimeout = null;
