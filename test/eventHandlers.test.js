@@ -200,14 +200,17 @@ describe('eventHandlers.js - functionality', () => {
             eventHandlers.registerWaterCleaningEvents(main, vacbot, ctx);
         });
 
-        it('WaterLevel - should update ctx.waterLevel', async () => {
-            await events.WaterLevel(2);
-            expect(ctx.waterLevel).to.equal(2);
-        });
-
-        it('WaterBoxInfo - should set ctx.waterboxInstalled = true for "1"', () => {
-            events.WaterBoxInfo('1');
+        it('WaterInfo - should update states, context, and call helper methods', async () => {
+            await events.WaterInfo({
+                waterLevel: 3,
+                waterboxInfo: 1,
+                moppingType: 1,
+                scrubbingType: 2
+            });
+            expect(ctx.waterLevel).to.equal(3);
             expect(ctx.waterboxInstalled).to.be.true;
+            expect(main.handleWaterBoxMoppingType.calledWith(ctx, 1)).to.be.true;
+            expect(main.handleWaterBoxScrubbingType.calledWith(ctx, 2)).to.be.true;
         });
 
         it('CarpetPressure - should set autoBoostSuction state', async () => {
@@ -554,12 +557,6 @@ describe('eventHandlers.js - functionality', () => {
         it('HeaderInfo - should update firmwareVersion state', async () => {
             await events.HeaderInfo({ fwVer: '1.2.3' });
             expect(ctx.adapterProxy.setStateConditional.calledWith('info.firmwareVersion', '1.2.3', true)).to.be.true;
-        });
-
-        it('WaterBoxMoppingType - should call handleWaterBoxMoppingType', async () => {
-            events.WaterBoxMoppingType(1);
-            await new Promise(resolve => setTimeout(resolve, 0));
-            expect(main.handleWaterBoxMoppingType.calledWith(ctx, 1)).to.be.true;
         });
 
         it('WashInfo - should set info.extended.washInfo state', async () => {
