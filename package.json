@@ -27,7 +27,7 @@
   "dependencies": {
     "@iobroker/adapter-core": "^3.3.2",
     "axios": "1.16.1",
-    "ecovacs-deebot": "^1.0.0-alpha.11",
+    "ecovacs-deebot": "^1.0.0-alpha.12",
     "node-machine-id": "1.1.12"
   },
   "engines": {
