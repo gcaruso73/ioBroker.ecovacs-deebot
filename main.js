@@ -444,6 +444,7 @@ class EcovacsDeebot extends utils.Adapter {
             const devices = await api.devices();
 
             const numberOfDevices = Object.keys(devices).length;
+            this.requestThrottle.maxRequests = Math.max(10, numberOfDevices * 10);
             if (numberOfDevices === 0) {
                 this.log.warn('Successfully connected to Ecovacs server, but no devices found. Exiting ...');
                 this.setConnection(false);
@@ -900,6 +901,7 @@ class EcovacsDeebot extends utils.Adapter {
         ctx.unreachableWarningSent = false;
         this.updateDeviceConnectionState(ctx, true);
         this.updateConnectionState();
+        this.resetErrorStates(ctx);
 
         // Re-fetch device states immediately since some may have been missed
         setTimeout(() => {
