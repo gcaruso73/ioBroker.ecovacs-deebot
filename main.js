@@ -91,6 +91,9 @@ class EcovacsDeebot extends utils.Adapter {
         try {
             for (const ctx of this.deviceContexts.values()) {
                 if (ctx.vacbot) {
+                    if (ctx.vacbot.client && typeof ctx.vacbot.client.removeAllListeners === 'function') {
+                        ctx.vacbot.client.removeAllListeners();
+                    }
                     ctx.disconnecting = true;
                     ctx.vacbot.disconnect();
                     if (typeof ctx.vacbot.removeAllListeners === 'function') {
@@ -173,6 +176,9 @@ class EcovacsDeebot extends utils.Adapter {
     disconnect(ctx, disconnectVacbot) {
         this.setConnection(false);
         if (disconnectVacbot && ctx.vacbot) {
+            if (ctx.vacbot.client && typeof ctx.vacbot.client.removeAllListeners === 'function') {
+                ctx.vacbot.client.removeAllListeners();
+            }
             ctx.disconnecting = true;
             ctx.vacbot.disconnect();
         }
@@ -377,6 +383,9 @@ class EcovacsDeebot extends utils.Adapter {
             this.stopPolling(ctx1);
             try {
                 if (ctx1.vacbot) {
+                    if (ctx1.vacbot.client && typeof ctx1.vacbot.client.removeAllListeners === 'function') {
+                        ctx1.vacbot.client.removeAllListeners();
+                    }
                     ctx1.disconnecting = true;
                     ctx1.vacbot.disconnect();
                     if (typeof ctx1.vacbot.removeAllListeners === 'function') {
@@ -809,6 +818,9 @@ class EcovacsDeebot extends utils.Adapter {
         const prefix = logPrefix || '';
         if (!ctx || !ctx.vacbot) return;
         try {
+            if (ctx.vacbot.client && typeof ctx.vacbot.client.removeAllListeners === 'function') {
+                ctx.vacbot.client.removeAllListeners();
+            }
             ctx.disconnecting = true;
             const result = ctx.vacbot.disconnect && ctx.vacbot.disconnect();
             if (result && typeof result.then === 'function') {
