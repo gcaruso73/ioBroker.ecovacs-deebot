@@ -72,7 +72,7 @@ describe('adapterQueue.js - advanced edge cases', () => {
     });
 
     describe('startNextItemFromQueue - throttle', () => {
-        it('should delay when throttle rate limit is reached', function(done) {
+        it('should delay when throttle rate limit is reached', function (done) {
             this.timeout(500);
             const getDelay = sinon.stub();
             getDelay.onFirstCall().returns(30);
@@ -121,10 +121,9 @@ describe('adapterQueue.js - advanced edge cases', () => {
         });
     });
 
-    describe('addInitialGetCommands - feature paths', () => {
-        it('should add SweepMode/BorderSpin/MopOnlyMode for 950type_V2 with mopping', () => {
-            ctx.getModel().is950type_V2.returns(true);
-            ctx.vacbot.hasMoppingSystem.returns(true);
+    describe('addInitialGetCommands - devices with air drying', () => {
+        it('should add SweepMode/BorderSpin/MopOnlyMode for devices with air drying', () => {
+            ctx.getModel().hasAirDrying.returns(true);
             const queue = new Queue(ctx);
             queue.addInitialGetCommands();
             const cmds = queue.entries.map(e => e.cmd);

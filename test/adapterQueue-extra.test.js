@@ -102,11 +102,10 @@ describe('adapterQueue.js - feature branches', () => {
         });
     });
 
-    describe('addStandardGetCommands - 950type_V2 mopping', () => {
-        it('should add mopping-related commands for 950type_V2 with mopping system', () => {
+    describe('addStandardGetCommands - devices with air drying', () => {
+        it('should add mopping-related commands for devices with air drying', () => {
             const { ctx, queue } = createQueueWithModel();
-            ctx.getModel().is950type_V2.returns(true);
-            ctx.vacbot.hasMoppingSystem.returns(true);
+            ctx.getModel().hasAirDrying.returns(true);
             queue.addStandardGetCommands();
             expect(queue.add.calledWith('GetSweepMode')).to.be.true;
             expect(queue.add.calledWith('GetBorderSpin')).to.be.true;
