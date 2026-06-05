@@ -496,21 +496,9 @@ class EcovacsDeebot extends utils.Adapter {
                     this.log.debug('[' + deviceId + '] Device already connected, skipping');
                     continue;
                 }
-                let deviceApi = api;
-                if (!singleDeviceMode && i > 0) {
-                    try {
-                        const deviceSessionId = EcoVacsAPI.getDeviceId(nodeMachineId.machineIdSync(), i);
-                        deviceApi = new EcoVacsAPI(deviceSessionId, this.config.countrycode, continent, authDomain);
-                        this.log.debug(`[${deviceId}] Establishing separate API session with resource ID: ${deviceApi.resource}`);
-                        await deviceApi.connect(this.config.email, password_hash);
-                    } catch (err) {
-                        this.log.error(`[${deviceId}] Failed to establish separate API session: ${err.message}`);
-                        deviceApi = api;
-                    }
-                }
                 let vacbot;
                 try {
-                    vacbot = deviceApi.getVacBot(deviceApi.uid, EcoVacsAPI.REALM, deviceApi.resource, deviceApi.user_access_token, vacuum, continent);
+                    vacbot = api.getVacBot(api.uid, EcoVacsAPI.REALM, api.resource, api.user_access_token, vacuum, continent);
                 } catch (e) {
                     if (e.message && e.message.includes("'XML' based model identified")) {
                         const nick = vacuum.nick || vacuum.deviceName || vacuum.name || deviceId;
@@ -520,7 +508,7 @@ class EcovacsDeebot extends utils.Adapter {
                     throw e;
                 }
                 const ctx = new DeviceContext(this, deviceId, vacbot, vacuum, this.requestThrottle, useSkipPrefix);
-                ctx.vacuum = vacuum; ctx.api = deviceApi; ctx.model = new Model(vacbot, this.config); ctx.device = new Device(ctx);
+                ctx.vacuum = vacuum; ctx.api = api; ctx.model = new Model(vacbot, this.config); ctx.device = new Device(ctx);
                 this.deviceContexts.set(deviceId, ctx);
                 try {
                     const enabledState = await this.getStateAsync(ctx.statePath('status.enabled'));
