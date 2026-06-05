@@ -164,13 +164,24 @@ describe('adapterQueue.js - advanced edge cases', () => {
             expect(cmds).to.include('GetAICleanItemState');
         });
 
-        it('should add GetStationInfo/GetWashInfo when has cleaning station', () => {
+        it('should add GetStationInfo and GetWashInfo when has cleaning station and hot water washing', () => {
             ctx.getModel().hasCleaningStation.returns(true);
+            ctx.vacbot.hasHotWaterWashing.returns(true);
             const queue = new Queue(ctx);
             queue.addInitialGetCommands();
             const cmds = queue.entries.map(e => e.cmd);
             expect(cmds).to.include('GetStationInfo');
             expect(cmds).to.include('GetWashInfo');
+        });
+
+        it('should add GetStationInfo but skip GetWashInfo when has cleaning station but no hot water washing', () => {
+            ctx.getModel().hasCleaningStation.returns(true);
+            ctx.vacbot.hasHotWaterWashing.returns(false);
+            const queue = new Queue(ctx);
+            queue.addInitialGetCommands();
+            const cmds = queue.entries.map(e => e.cmd);
+            expect(cmds).to.include('GetStationInfo');
+            expect(cmds).to.not.include('GetWashInfo');
         });
 
         it('should skip GetNetInfo when network info not supported', () => {

@@ -184,6 +184,7 @@ function createMockCtx(overrides = {}) {
         hasRoundMopInfo: sinon.stub().returns(false),
         hasUnitCareInfo: sinon.stub().returns(false),
         hasVacuumPowerAdjustment: sinon.stub().returns(false),
+        hasHotWaterWashing: sinon.stub().returns(false),
         getDeviceProperty: sinon.stub().returns(false)
     }, overrides.vacbot || {});
 

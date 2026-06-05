@@ -804,5 +804,24 @@ describe('adapterCommands.js extended', () => {
             await adapterCommands.handleStateChange(adapter, ctx, 'control.mobilePurification', { ack: false, val: true });
             expect(ctx.vacbot.run.calledWith('mobilePurification')).to.be.true;
         });
+
+        it('should handle control.extended.washMode when hot water washing is supported', async () => {
+            mockAdapterHelper.getStateNameById.returns('washMode');
+            mockAdapterHelper.getChannelNameById.returns('control');
+            mockAdapterHelper.getSubChannelNameById.returns('extended');
+            ctx.vacbot.hasHotWaterWashing.returns(true);
+            await adapterCommands.handleStateChange(adapter, ctx, 'control.extended.washMode', { ack: false, val: 1 });
+            expect(ctx.vacbot.run.calledWith('SetWashInfo', 1)).to.be.true;
+        });
+
+        it('should ignore control.extended.washMode and log warning when hot water washing is not supported', async () => {
+            mockAdapterHelper.getStateNameById.returns('washMode');
+            mockAdapterHelper.getChannelNameById.returns('control');
+            mockAdapterHelper.getSubChannelNameById.returns('extended');
+            ctx.vacbot.hasHotWaterWashing.returns(false);
+            await adapterCommands.handleStateChange(adapter, ctx, 'control.extended.washMode', { ack: false, val: 1 });
+            expect(ctx.vacbot.run.calledWith('SetWashInfo', 1)).to.be.false;
+            expect(adapter.log.warn.called).to.be.true;
+        });
     });
 });
