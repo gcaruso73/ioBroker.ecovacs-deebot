@@ -328,13 +328,14 @@ class EcovacsDeebot extends utils.Adapter {
         const stateName = parts[parts.length - 1];
         if (stateName === 'enabled' && subPath === 'status.enabled') {
             ctx.enabled = state.val;
+            const displayName = ctx.vacuum && ctx.vacuum.nick ? `${deviceId} (${ctx.vacuum.nick})` : deviceId;
             if (state.val) {
-                this.log.info(`Device ${deviceId}: control and updates enabled`);
+                this.log.info(`Device ${displayName}: control and updates enabled`);
                 if (ctx.connected) {
                     this.startPolling(ctx);
                 }
             } else {
-                this.log.info(`Device ${deviceId}: control and updates disabled`);
+                this.log.info(`Device ${displayName}: control and updates disabled`);
                 this.stopPolling(ctx);
             }
         }

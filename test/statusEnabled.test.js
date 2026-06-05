@@ -409,15 +409,16 @@ describe('status.enabled - Device Deactivation Feature', () => {
                 const stateName = parts[parts.length - 1];
                 if (stateName === 'enabled' && subPath === 'status.enabled') {
                     ctx.enabled = state.val;
+                    const displayName = ctx.vacuum && ctx.vacuum.nick ? `${deviceId} (${ctx.vacuum.nick})` : deviceId;
                     if (state.val) {
                         ctx.enabled = true;
-                        this.log.info('Device ' + deviceId + ': control and updates enabled');
+                        this.log.info('Device ' + displayName + ': control and updates enabled');
                         if (ctx.connected) {
                             if (this.startPolling) this.startPolling(ctx);
                         }
                     } else {
                         ctx.enabled = false;
-                        this.log.info('Device ' + deviceId + ': control and updates disabled');
+                        this.log.info('Device ' + displayName + ': control and updates disabled');
                         if (this.stopPolling) this.stopPolling(ctx);
                     }
                 }
