@@ -29,7 +29,8 @@ describe('eventHandlers.js - functionality', () => {
         vacbot = {
             on: sinon.stub().callsFake((event, handler) => {
                 events[event] = handler;
-            })
+            }),
+            hasMoppingSystem: sinon.stub().returns(true)
         };
         main = {
             log: {
