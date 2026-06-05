@@ -2,7 +2,7 @@
 
 ## Overview
 
-**ioBroker.ecovacs-deebot** is an ioBroker adapter that integrates Ecovacs Deebot, Yeedi, AIRBOT, and GOAT devices into the ioBroker smart-home ecosystem. It uses the companion library [ecovacs-deebot.js](https://github.com/mrbungle64/ecovacs-deebot.js) for all low-level communication and exposes device state and control via the ioBroker object tree.
+**ioBroker.ecovacs-deebot** is an ioBroker adapter that integrates Ecovacs Deebot, Yeedi, and AIRBOT devices into the ioBroker smart-home ecosystem. GOAT lawn-mower devices may partially work but are community-supported only and not actively maintained. It uses the companion library [ecovacs-deebot.js](https://github.com/mrbungle64/ecovacs-deebot.js) for all low-level communication and exposes device state and control via the ioBroker object tree.
 
 - **Adapter version:** 2.0.x (alpha – multi-device architecture)
 - **Library version:** 1.0.0-alpha (ecovacs-deebot npm package)
@@ -65,7 +65,8 @@ Support is divided into three tiers:
 | Tier | Description | Devices (examples) |
 | :--- | :--- | :--- |
 | 🟢 **Active** | Devices owned by the maintainer – fully tested | OZMO 920/950, T8 AIVI, X1 TURBO, AIRBOT Z1, Z1 Air Quality Monitor |
-| 🟡 **Community** | Best-effort – supported via Pull Requests | T9, T10, T20, T30, T50, T80, T90, X2, X5, X8, X9, X11, N-series, U2, yeedi, GOAT |
+| 🟡 **Community** | Best-effort – supported via Pull Requests | T9, T10, T20, T30, T50, T80, T90, X2, X5, X8, X9, X11, N-series, U2, yeedi |
+| 🟡 **Community (partial)** | GOAT devices may partially work but are not actively maintained | GOAT G1, GX-600, A/O-series |
 | 🔴 **Legacy** | XMPP/XML devices – **not supported in v2.x** | OZMO 930, Deebot 900/901, N79, 600-series, OZMO 610/960 |
 
 > Legacy support is available only in adapter **v1.5.x** with library **v0.9.6**.
@@ -77,7 +78,7 @@ The library recognises the following device categories returned by `vacbot.getDe
 - `Vacuum Cleaner` – Standard robot vacuums (DEEBOT, yeedi series)
 - `Air Purifier` – AIRBOT Z1
 - `Air Quality Monitor` – Z1 Air Quality Monitor
-- `Lawn Mower` – GOAT G1, GX-600, A/O-series
+- `Lawn Mower` – GOAT G1, GX-600, A/O-series *(community-supported only; may partially work)*
 
 ### Platform Types
 
@@ -97,7 +98,7 @@ Each device belongs to a platform architecture returned by `vacbot.getPlatformTy
 | `X2` | X2, X5, X8, X9, X11 OmniCyclone |
 | `airbot` | AIRBOT Z1 |
 | `aqMonitor` | Z1 Air Quality Monitor |
-| `lawnMower` | GOAT G1, GX-600, A/O series |
+| `lawnMower` | GOAT G1, GX-600, A/O series *(community-supported only; may partially work)* |
 | `yeedi` | yeedi vac, mop station, Floor 3, cube |
 | `legacy` | Pre-950 XMPP/XML devices (not supported in v2) |
 | `unknown` | Unrecognised device class |
