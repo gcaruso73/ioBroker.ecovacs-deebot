@@ -1,33 +1,71 @@
-.git
+# Version control
+.git/
 .github/
-.idea
-node_modules/
+
+# Editor and IDE
+.idea/
 .vscode/
-nbproject/
-.vs*/
+.vs/
 *.code-workspace
+nbproject/
+
+# OS files
+.DS_Store
 Thumbs.db
-.claude/
+Desktop.ini
 
-test/
-travis/
-.travis.yml
-appveyor.yml
-.travis.yaml
-appveyor.yaml
+# Dependencies
+node_modules/
 
-tsconfig.json
+# Environment files
+.env
+.env.example
 
-.eslintrc.json
-.eslintrc.js
-
-# npm package files
+# npm artifacts
 iobroker.*.tgz
 package-lock.json
+
+# CI/CD
+.travis.yml
+.travis.yaml
+appveyor.yml
+appveyor.yaml
+
+# Tests
+test/
+travis/
+.nyc_output/
+coverage/
 
 # i18n intermediate files
 admin/i18n/flat.txt
 admin/i18n/*/flat.txt
 
-# maintenance scripts
-maintenance/**
+# Linting
+.eslintrc.json
+.eslintrc.js
+.eslintrc.yaml
+.eslintrc.yml
+
+# TypeScript config
+tsconfig.json
+
+# Docker
+.docker/
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Docs not needed in the package
+DOCUMENTATION.md
+
+# Maintenance scripts
+maintenance/
+
+# Claude Code
+.claude/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

@@ -1,29 +1,40 @@
-.git
-.idea
-.github
-.kilo
-.roo
+# Editor and IDE
+.idea/
 .vscode/
+.kilo/
+.roo/
 *.code-workspace
-node_modules
-nbproject
-.claude/
+nbproject/
 
-# npm package files
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+
+# npm artifacts
 iobroker.*.tgz
 
-Thumbs.db
+# Test coverage
+.nyc_output/
+coverage/
 
 # i18n intermediate files
 admin/i18n/flat.txt
 admin/i18n/*/flat.txt
 
-#ignore .commitinfo created by ioBroker release script
+# ioBroker release script
 .commitinfo
 
-# Test coverage output
-.nyc_output/
-coverage/
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Environment files
-.env
+# Claude Code
+.claude/
