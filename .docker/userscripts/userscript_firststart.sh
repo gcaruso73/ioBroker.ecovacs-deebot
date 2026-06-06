@@ -17,7 +17,23 @@ configure_and_start_instance() {
             const execSync = require("child_process").execSync;
             const patch = { native: {} };
             if (process.env.ECOVACS_EMAIL) patch.native.email = process.env.ECOVACS_EMAIL;
-            if (process.env.ECOVACS_PASSWORD) patch.native.password = process.env.ECOVACS_PASSWORD;
+            if (process.env.ECOVACS_PASSWORD) {
+                let password = process.env.ECOVACS_PASSWORD;
+                try {
+                    const systemConfig = JSON.parse(execSync("iobroker object get system.config").toString());
+                    const secret = systemConfig.native && systemConfig.native.secret;
+                    if (secret && !password.startsWith("$/aes-192-cbc:")) {
+                        const tools = require("/opt/iobroker/node_modules/iobroker.js-controller/build/cjs/lib/tools.js").default;
+                        if (tools && typeof tools.encrypt === "function") {
+                            password = tools.encrypt(secret, password);
+                            console.log("Password encrypted successfully");
+                        }
+                    }
+                } catch (err) {
+                    console.warn("Failed to encrypt password, using plain text:", err.message);
+                }
+                patch.native.password = password;
+            }
             if (process.env.ECOVACS_COUNTRY) patch.native.countrycode = process.env.ECOVACS_COUNTRY.toLowerCase();
             
             const patchStr = JSON.stringify(patch);
