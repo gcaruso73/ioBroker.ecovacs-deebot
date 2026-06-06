@@ -56,6 +56,36 @@ Version 2 manages **all devices on a single account in one adapter instance**. I
 | Country | Two-letter ISO country code (e.g. `de`, `us`) |
 | Auth domain | Leave empty for Ecovacs; use `yeedi.com` for Yeedi accounts |
 
+### Docker / Container Deployment
+
+A `Dockerfile` and `docker-compose.yml` are provided in the repository root for running the adapter in a container based on `buanet/iobroker`.
+
+#### Auto-Configuration on First Start
+
+You can pass your Ecovacs credentials to the container using a `.env` file to auto-configure the adapter on first start.
+
+1. **Setup Environment File:**
+   Copy `.env.example` to `.env` and configure your credentials:
+   ```env
+   ECOVACS_EMAIL=your-email@example.com
+   ECOVACS_PASSWORD=your-password
+   ECOVACS_COUNTRY=de
+   ```
+
+2. **Docker Compose:**
+   The `docker-compose.yml` is configured to load these variables and pass them to the container. Run:
+   ```bash
+   docker compose up -d
+   ```
+
+3. **How it works:**
+   On the container's very first startup, the `.docker/userscripts/userscript_firststart.sh` initialization script runs. If it finds these environment variables:
+   - It installs and registers the adapter.
+   - It creates the `system.adapter.ecovacs-deebot.0` instance.
+   - It automatically injects the credentials via `iobroker object extend`.
+   - The ioBroker `js-controller` automatically encrypts the password using the system secret because the field is marked as `encryptedNative` in `io-package.json`.
+   - It enables and starts the adapter instance.
+
 ---
 
 ## Supported Devices & Support Tiers

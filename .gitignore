@@ -24,3 +24,6 @@ admin/i18n/*/flat.txt
 # Test coverage output
 .nyc_output/
 coverage/
+
+# Environment files
+.env

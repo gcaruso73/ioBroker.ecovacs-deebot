@@ -98,6 +98,29 @@ To support a new model, usually changes are needed in both parts:
 * **ioBroker:** Stable installation
 * **Optional:** `canvas` for map rendering (see [Wiki](https://github.com/mrbungle64/ioBroker.ecovacs-deebot/wiki) for details).
 
+### 🐳 Docker / Container Deployment
+
+The repository includes a `Dockerfile` and `docker-compose.yml` configured to run the adapter inside a [buanet/iobroker](https://github.com/buanet/docker-iobroker) container.
+
+To automatically configure the Ecovacs adapter instance on the first start of the container using a `.env` file:
+
+1. **Copy the example environment file:**
+   ```bash
+   cp .env.example .env
+   ```
+2. **Open `.env` and fill in your credentials:**
+   ```env
+   ECOVACS_EMAIL=your-email@example.com
+   ECOVACS_PASSWORD=your-password
+   ECOVACS_COUNTRY=de
+   ```
+3. **Start the container:**
+   ```bash
+   docker compose up -d
+   ```
+
+The initialization script will automatically register, configure, and start the adapter instance using these credentials. The password is automatically encrypted by ioBroker's `js-controller` on first run.
+
 ## Disclaimer
 I am in no way affiliated with Ecovacs Robotics Co., Ltd. or yeedi Technology Limited. This is a private hobby project.
 

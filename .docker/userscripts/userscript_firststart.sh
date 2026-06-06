@@ -4,6 +4,39 @@ echo "========================================================="
 echo "=== Starting ioBroker.ecovacs-deebot Autoinstallation ==="
 echo "========================================================="
 
+# Function to add, configure, and start the adapter instance
+configure_and_start_instance() {
+    # Add an instance of the adapter
+    echo "Adding adapter instance..."
+    iobroker add ecovacs-deebot 0
+    
+    # Configure the adapter if env vars are present
+    if [ -n "$ECOVACS_EMAIL" ] || [ -n "$ECOVACS_PASSWORD" ] || [ -n "$ECOVACS_COUNTRY" ]; then
+        echo "Configuring adapter instance from environment variables..."
+        node -e '
+            const execSync = require("child_process").execSync;
+            const patch = { native: {} };
+            if (process.env.ECOVACS_EMAIL) patch.native.email = process.env.ECOVACS_EMAIL;
+            if (process.env.ECOVACS_PASSWORD) patch.native.password = process.env.ECOVACS_PASSWORD;
+            if (process.env.ECOVACS_COUNTRY) patch.native.countrycode = process.env.ECOVACS_COUNTRY.toLowerCase();
+            
+            const patchStr = JSON.stringify(patch);
+            console.log("Applying config patch:", patchStr);
+            try {
+                execSync(`iobroker object extend system.adapter.ecovacs-deebot.0 ${JSON.stringify(patchStr)}`, { stdio: "inherit" });
+            } catch (err) {
+                console.error("Failed to apply configuration:", err);
+                process.exit(1);
+            }
+        '
+    fi
+    
+    # Start and enable the adapter instance
+    echo "Enabling and starting adapter instance..."
+    iobroker set ecovacs-deebot.0 --enabled true
+    iobroker start ecovacs-deebot.0
+}
+
 # Scenario 1: Adapter source mounted or copied to /opt/iobroker.ecovacs-deebot
 if [ -d "/opt/iobroker.ecovacs-deebot" ]; then
     echo "Found adapter source at /opt/iobroker.ecovacs-deebot"
@@ -19,9 +52,8 @@ if [ -d "/opt/iobroker.ecovacs-deebot" ]; then
     echo "Uploading adapter to ioBroker..."
     iobroker upload ecovacs-deebot
     
-    # Add an instance of the adapter and enable it
-    echo "Adding adapter instance..."
-    iobroker add ecovacs-deebot 0 --enabled
+    # Configure and start instance
+    configure_and_start_instance
     
     echo "=== ioBroker.ecovacs-deebot installation finished! ==="
 
@@ -37,8 +69,8 @@ elif [ -d "/opt/iobroker/node_modules/iobroker.ecovacs-deebot" ]; then
     echo "Uploading adapter to ioBroker..."
     iobroker upload ecovacs-deebot
     
-    echo "Adding adapter instance..."
-    iobroker add ecovacs-deebot 0 --enabled
+    # Configure and start instance
+    configure_and_start_instance
     
     echo "=== ioBroker.ecovacs-deebot installation finished! ==="
 

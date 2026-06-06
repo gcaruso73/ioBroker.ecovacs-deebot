@@ -29,6 +29,10 @@ services:
     environment:
       - TZ=Europe/Berlin
       - IOB_ADMINPORT=8081
+      # Optional: Auto-configure Ecovacs Deebot adapter on first start (loaded from .env file)
+      - ECOVACS_EMAIL=${ECOVACS_EMAIL:-}
+      - ECOVACS_PASSWORD=${ECOVACS_PASSWORD:-}
+      - ECOVACS_COUNTRY=${ECOVACS_COUNTRY:-}
 
 volumes:
   iobroker-data:
