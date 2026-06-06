@@ -1,5 +1,16 @@
 'use strict';
 
+/**
+ * @typedef {Object} VacBot
+ * @property {function(): void} connect
+ * @property {function(Object): void} connectShared
+ * @property {function(): (Object|null)} getMqttClient
+ * @property {function(): Promise<any>} disconnect
+ * @property {function(string, function): void} on
+ * @property {function(): void} [removeAllListeners]
+ * @property {Object} [client]
+ */
+
 const utils = require('@iobroker/adapter-core');
 const ecovacsDeebot = require('ecovacs-deebot');
 const nodeMachineId = require('node-machine-id');
@@ -202,7 +213,7 @@ class EcovacsDeebot extends utils.Adapter {
         try {
             const api = new EcoVacsAPI(deviceId, countryCode, continent, authDomainValue);
             await api.connect(email, passwordHash);
-            const devices = await api.devices();
+            const devices = /** @type {Object[]} */ (await api.devices());
 
             const numberOfDevices = Object.keys(devices).length;
             this.log.info(`Device discovery successful. Found ${numberOfDevices} device(s)`);
@@ -260,7 +271,7 @@ class EcovacsDeebot extends utils.Adapter {
         try {
             const api = new EcoVacsAPI(deviceId, countryCode, continent, authDomainValue);
             await api.connect(email, passwordHash);
-            const devices = await api.devices();
+            const devices = /** @type {Object[]} */ (await api.devices());
 
             const numberOfDevices = Object.keys(devices).length;
             this.log.info(`Device list fetch successful. Found ${numberOfDevices} device(s)`);
@@ -442,7 +453,7 @@ class EcovacsDeebot extends utils.Adapter {
 
             const api = new EcoVacsAPI(deviceId, this.config.countrycode, continent, authDomain);
             await api.connect(this.config.email, password_hash);
-            const devices = await api.devices();
+            const devices = /** @type {Object[]} */ (await api.devices());
 
             // Sort devices by did to ensure stable and deterministic ordering across restarts
             devices.sort((a, b) => {
@@ -498,6 +509,13 @@ class EcovacsDeebot extends utils.Adapter {
                 }
             }
 
+            // Shared MQTT client for multi-device: all devices use the same API session
+            // (api) so the broker delivers events for all devices through one connection.
+            // The first device creates the MQTT connection; subsequent devices subscribe
+            // through it. See: https://github.com/DeebotUniverse/client.py — one session,
+            // one MqttClient, multiple Device subscriptions routed by DID.
+            let sharedMqttClient = null;
+
             for (let i = 0; i < devicesToProcess.length; i++) {
                 const vacuum = devicesToProcess[i];
                 const deviceId = vacuum.did.replace(/[^a-zA-Z0-9_]/g, '_');
@@ -505,21 +523,9 @@ class EcovacsDeebot extends utils.Adapter {
                     this.log.debug('[' + deviceId + '] Device already connected, skipping');
                     continue;
                 }
-                let deviceApi = api;
-                if (!singleDeviceMode && i > 0) {
-                    try {
-                        const deviceSessionId = EcoVacsAPI.md5(nodeMachineId.machineIdSync() + vacuum.did);
-                        deviceApi = new EcoVacsAPI(deviceSessionId, this.config.countrycode, continent, authDomain);
-                        this.log.debug(`[${deviceId}] Establishing separate API session with resource ID: ${deviceApi.resource}`);
-                        await deviceApi.connect(this.config.email, password_hash);
-                    } catch (err) {
-                        this.log.error(`[${deviceId}] Failed to establish separate API session: ${err.message}`);
-                        deviceApi = api;
-                    }
-                }
                 let vacbot;
                 try {
-                    vacbot = deviceApi.getVacBot(deviceApi.uid, EcoVacsAPI.REALM, deviceApi.resource, deviceApi.user_access_token, vacuum, continent);
+                    vacbot = (api.getVacBot(api.uid, EcoVacsAPI.REALM, api.resource, api.user_access_token, vacuum, continent));
                 } catch (e) {
                     if (e.message && e.message.includes("'XML' based model identified")) {
                         const nick = vacuum.nick || vacuum.deviceName || vacuum.name || deviceId;
@@ -529,7 +535,7 @@ class EcovacsDeebot extends utils.Adapter {
                     throw e;
                 }
                 const ctx = new DeviceContext(this, deviceId, vacbot, vacuum, this.requestThrottle, useSkipPrefix);
-                ctx.vacuum = vacuum; ctx.api = deviceApi; ctx.model = new Model(vacbot, this.config); ctx.device = new Device(ctx);
+                ctx.vacuum = vacuum; ctx.api = api; ctx.model = new Model(vacbot, this.config); ctx.device = new Device(ctx);
                 this.deviceContexts.set(deviceId, ctx);
                 try {
                     const enabledState = await this.getStateAsync(ctx.statePath('status.enabled'));
@@ -553,11 +559,23 @@ class EcovacsDeebot extends utils.Adapter {
                 eventHandlers.registerAirbotEvents(this, vacbot, ctx);
                 if (this.globalMqttUnreachable) {
                     this.log.debug(ctx.deviceId + '] Skipping vacbot.connect() - MQTT server globally unreachable');
+                } else if (sharedMqttClient) {
+                    this.log.debug(`[${deviceId}] Attaching to shared MQTT session`);
+                    vacbot.connectShared(sharedMqttClient);
+                    ctx.usesSharedMqttClient = true;
                 } else {
                     vacbot.connect();
+                    ctx.isPrimaryMqttDevice = true;
                 }
                 if (ctx.enabled) this.startPolling(ctx);
                 await readyPromise;
+                if (!sharedMqttClient && ctx.isPrimaryMqttDevice) {
+                    const client = vacbot.getMqttClient();
+                    if (client) {
+                        sharedMqttClient = client;
+                        this.log.debug(`[${deviceId}] Captured shared MQTT client for subsequent devices`);
+                    }
+                }
                 if (i < devicesToProcess.length - 1) {
                     this.log.info('Staggering next device connection in ' + (C.DEVICE_CONNECTION_DELAY_MS / 1000) + 's...');
                     await new Promise(resolve => {
@@ -849,12 +867,35 @@ class EcovacsDeebot extends utils.Adapter {
     _reconnectVacbotSafely(ctx, logPrefix) {
         const prefix = logPrefix || '';
         if (!ctx || !ctx.vacbot) return;
+
+        const vacbot = /** @type {VacBot} */ (ctx.vacbot);
+
+        if (ctx.usesSharedMqttClient) {
+            // Secondary device: primary owns the MQTT connection. Just resubscribe.
+            this.log.debug(`${prefix}[${ctx.deviceId}] Shared MQTT device — resubscribing via primary`);
+            try {
+                const primaryCtx = this._getPrimaryMqttContext();
+                if (primaryCtx) {
+                    const client = (/** @type {VacBot} */ (primaryCtx.vacbot)).getMqttClient();
+                    if (client) {
+                        vacbot.connectShared(client);
+                        return;
+                    }
+                }
+            } catch (e) {
+                this.log.debug(`${prefix}[${ctx.deviceId}] Resubscribe failed: ${e && e.message}`);
+                throw e;
+            }
+            return;
+        }
+
+        // Primary (or single) device: full disconnect + reconnect.
         try {
-            if (ctx.vacbot.client && typeof ctx.vacbot.client.removeAllListeners === 'function') {
-                ctx.vacbot.client.removeAllListeners();
+            if (vacbot.client && typeof vacbot.client.removeAllListeners === 'function') {
+                vacbot.client.removeAllListeners();
             }
             ctx.disconnecting = true;
-            const result = ctx.vacbot.disconnect && ctx.vacbot.disconnect();
+            const result = vacbot.disconnect && vacbot.disconnect();
             if (result && typeof result.then === 'function') {
                 result.catch(e => {
                     this.log.silly(`${prefix}disconnect() before reconnect rejected: ${e && e.message}`);
@@ -865,11 +906,33 @@ class EcovacsDeebot extends utils.Adapter {
         }
         try {
             ctx.disconnecting = false;
-            ctx.vacbot.connect();
+            vacbot.connect();
+
+            // Propagate the new MQTT client to all secondary devices.
+            const newClient = vacbot.getMqttClient();
+            if (newClient) {
+                for (const [, otherCtx] of this.deviceContexts) {
+                    if (otherCtx.usesSharedMqttClient) {
+                        this.log.debug(`${prefix}[${otherCtx.deviceId}] Updating shared MQTT client after primary reconnect`);
+                        try {
+                            (/** @type {VacBot} */ (otherCtx.vacbot)).connectShared(newClient);
+                        } catch (e) {
+                            this.log.debug(`${prefix}[${otherCtx.deviceId}] connectShared update failed: ${e && e.message}`);
+                        }
+                    }
+                }
+            }
         } catch (e) {
             this.log.debug(`${prefix}connect() failed: ${e && e.message}`);
             throw e;
         }
+    }
+
+    _getPrimaryMqttContext() {
+        for (const [, ctx] of this.deviceContexts) {
+            if (ctx.isPrimaryMqttDevice) return ctx;
+        }
+        return null;
     }
 
     clearUnreachableRetry(ctx) {

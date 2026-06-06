@@ -150,6 +150,8 @@ describe('connection-pipeline.test.js - Connection Flow and Protections', () => 
         mockEcoVacsAPI.prototype.devices = sinon.stub().resolves([]);
         mockEcoVacsAPI.prototype.getVacBot = sinon.stub().callsFake(() => ({
             connect: sinon.stub(),
+            connectShared: sinon.stub(),
+            getMqttClient: sinon.stub().returns({ connected: true }),
             disconnect: sinon.stub(),
             removeAllListeners: sinon.stub(),
             on: sinon.stub()
