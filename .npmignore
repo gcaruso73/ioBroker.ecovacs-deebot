@@ -7,6 +7,7 @@ nbproject/
 .vs*/
 *.code-workspace
 Thumbs.db
+.claude/
 
 test/
 travis/
