@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  iobroker:
+    # ----------------------------------------------------
+    # Option A: Standalone mode (Bundles adapter into image)
+    # ----------------------------------------------------
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    # ----------------------------------------------------
+    # Option B: Development mode (Uncomment below to mount local code directly)
+    # ----------------------------------------------------
+    # image: buanet/iobroker:latest
+    # volumes:
+    #   - iobroker-data:/opt/iobroker
+    #   - .:/opt/iobroker/node_modules/iobroker.ecovacs-deebot
+    #   - ./.docker/userscripts/userscript_firststart.sh:/opt/userscripts/userscript_firststart.sh
+
+    container_name: iobroker-ecovacs
+    hostname: iobroker-ecovacs
+    restart: always
+    ports:
+      - "8081:8081" # ioBroker Admin Web Interface
+    volumes:
+      # Persistent storage for ioBroker configuration and state database
+      - iobroker-data:/opt/iobroker
+    environment:
+      - TZ=Europe/Berlin
+      - IOB_ADMINPORT=8081
+
+volumes:
+  iobroker-data:
