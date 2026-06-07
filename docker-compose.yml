@@ -8,7 +8,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    
+
     # ----------------------------------------------------
     # Option B: Development mode (Uncomment below to mount local code directly)
     # ----------------------------------------------------
@@ -24,8 +24,9 @@ services:
     ports:
       - "8081:8081" # ioBroker Admin Web Interface
     volumes:
-      # Persistent storage for ioBroker configuration and state database
       - iobroker-data:/opt/iobroker
+      - ../ecovacs-deebot.js:/opt/ecovacs-deebot.js # the library, where file:../ resolves
+      - .:/opt/iobroker.ecovacs-deebot # the adapter source
     environment:
       - TZ=Europe/Berlin
       - IOB_ADMINPORT=8081
