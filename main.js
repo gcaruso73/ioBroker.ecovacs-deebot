@@ -66,6 +66,13 @@ class EcovacsDeebot extends utils.Adapter {
         this.lastMqttOfflineLogTimestamp = 0;
         this._lastConnectTime = 0;
         this._startupTime = 0;
+
+        // Active EcovacsAPI instance (shared by all devices of one account).
+        // Kept so automatic token refresh can be torn down on unload.
+        this.api = null;
+        this._onCredentialsUpdated = null;
+        this._onCredentialsRefreshError = null;
+        this._tokenReattachTimeout = null;
     }
 
     async onReady() {
@@ -100,6 +107,8 @@ class EcovacsDeebot extends utils.Adapter {
 
     onUnload(callback) {
         try {
+            this.disableTokenRefresh(this.api);
+            this.api = null;
             for (const ctx of this.deviceContexts.values()) {
                 if (ctx.vacbot) {
                     if (ctx.vacbot.client && typeof ctx.vacbot.client.removeAllListeners === 'function') {
@@ -451,8 +460,14 @@ class EcovacsDeebot extends utils.Adapter {
                 this.log.info('Using login: ' + authDomain);
             }
 
+            // Tear down any token refresh from a previous session before the
+            // reference is overwritten, so old timers/listeners cannot keep
+            // firing duplicate logins after a reconnect.
+            this.disableTokenRefresh(this.api);
+
             const api = new EcoVacsAPI(deviceId, this.config.countrycode, continent, authDomain);
             await api.connect(this.config.email, password_hash);
+            this.api = api;
             const devices = /** @type {Object[]} */ (await api.devices());
 
             // Sort devices by did to ensure stable and deterministic ordering across restarts
@@ -583,6 +598,16 @@ class EcovacsDeebot extends utils.Adapter {
                     });
                 }
             }
+            // Enable automatic token refresh only when at least one VacBot was
+            // actually created, so neither the early-return paths above (no
+            // devices, unmatched single-device mode) nor a run where every
+            // device was skipped (e.g. unsupported XML models) leaves a refresh
+            // timer running with no VacBot to apply the token to.
+            if (this.deviceContexts.size > 0) {
+                this.enableTokenRefresh(api, this.config.email, password_hash);
+            } else {
+                this.log.debug('No devices were created - skipping automatic token refresh');
+            }
             this._connecting = false;
         } catch (e) {
             this._connecting = false;
@@ -593,6 +618,170 @@ class EcovacsDeebot extends utils.Adapter {
             }
             this.error(e.message, true);
         }
+    }
+
+    /**
+     * Enables proactive, automatic access-token refresh for a long-running
+     * adapter session. The access token returned by `api.connect()` is only
+     * valid for a limited time (typically ~7 days). Without refreshing it, a
+     * 24/7 adapter would eventually hit authentication errors once the token
+     * expires.
+     *
+     * The library re-runs the login flow shortly before expiry and emits a
+     * `credentialsUpdated` event with the new token, which we apply to every
+     * connected VacBot instance (each one needs its own refreshed REST token).
+     * Only the MQTT connection owner actually reconnects; shared instances just
+     * update their token in place.
+     *
+     * @param {object} api - the active EcovacsAPI instance
+     * @param {string} accountId - the account ID used for `connect()`
+     * @param {string} passwordHash - the password hash used for `connect()`
+     */
+    enableTokenRefresh(api, accountId, passwordHash) {
+        if (typeof api.enableAutoTokenRefresh !== 'function') {
+            this.log.debug('Installed ecovacs-deebot version does not support automatic token refresh - skipping');
+            return;
+        }
+
+        this._onCredentialsUpdated = (creds) => {
+            if (!creds || !creds.token) {
+                return;
+            }
+            const updated = this._applyRefreshedToken(creds.token);
+            if (updated > 0) {
+                this.log.info(`Access token refreshed - applied to ${updated} device(s)`);
+            }
+        };
+        this._onCredentialsRefreshError = (e) => {
+            this.log.warn('Automatic token refresh failed (will be retried): ' + (e && e.message ? e.message : e));
+        };
+        api.on('credentialsUpdated', this._onCredentialsUpdated);
+        api.on('credentialsRefreshError', this._onCredentialsRefreshError);
+
+        api.enableAutoTokenRefresh(accountId, passwordHash);
+        const expiry = typeof api.getTokenExpiry === 'function' ? api.getTokenExpiry() : null;
+        if (expiry) {
+            this.log.info('Automatic token refresh enabled - next refresh scheduled for ' + new Date(expiry).toISOString());
+        } else {
+            this.log.info('Automatic token refresh enabled');
+        }
+    }
+
+    /**
+     * Tear down automatic token refresh for the given API instance: cancel the
+     * scheduled refresh timer, remove our listeners, and clear any pending
+     * shared-client reattachment poll. Called before a new session is created
+     * (reconnect) and on unload, so stale timers/listeners from a previous
+     * EcovacsAPI instance cannot keep firing duplicate logins.
+     * @param {object|null} api - the EcovacsAPI instance to tear down
+     */
+    disableTokenRefresh(api) {
+        if (this._tokenReattachTimeout) {
+            clearTimeout(this._tokenReattachTimeout);
+            this._tokenReattachTimeout = null;
+        }
+        if (!api) {
+            return;
+        }
+        if (typeof api.disableAutoTokenRefresh === 'function') {
+            api.disableAutoTokenRefresh();
+        }
+        if (typeof api.removeListener === 'function') {
+            if (this._onCredentialsUpdated) {
+                api.removeListener('credentialsUpdated', this._onCredentialsUpdated);
+            }
+            if (this._onCredentialsRefreshError) {
+                api.removeListener('credentialsRefreshError', this._onCredentialsRefreshError);
+            }
+        }
+        this._onCredentialsUpdated = null;
+        this._onCredentialsRefreshError = null;
+    }
+
+    /**
+     * Apply a refreshed access token to every connected VacBot. Each device
+     * needs its own refreshed REST token; the primary (MQTT connection owner)
+     * additionally reconnects its owned MQTT client with the new credentials,
+     * while shared instances only update the token in place.
+     *
+     * The primary's MQTT client is replaced asynchronously by the library
+     * (client.end -> connect), so any secondary devices sharing that connection
+     * are afterwards re-subscribed through the new client.
+     * @param {string} token - the refreshed user access token
+     * @returns {number} number of devices the token was applied to
+     */
+    _applyRefreshedToken(token) {
+        if (!token) {
+            return 0;
+        }
+        const primaryCtx = this._getPrimaryMqttContext();
+        const oldPrimaryClient = (primaryCtx && primaryCtx.vacbot && typeof primaryCtx.vacbot.getMqttClient === 'function')
+            ? primaryCtx.vacbot.getMqttClient()
+            : null;
+
+        let updated = 0;
+        let hasShared = false;
+        for (const ctx of this.deviceContexts.values()) {
+            if (ctx.usesSharedMqttClient) {
+                hasShared = true;
+            }
+            if (ctx.vacbot && typeof ctx.vacbot.updateUserAccessToken === 'function') {
+                try {
+                    ctx.vacbot.updateUserAccessToken(token);
+                    updated++;
+                } catch (e) {
+                    this.log.warn(`[${ctx.deviceId}] Failed to apply refreshed access token: ${e.message}`);
+                }
+            }
+        }
+
+        if (primaryCtx && hasShared) {
+            this._reattachSharedClients(primaryCtx, oldPrimaryClient, 0);
+        }
+        return updated;
+    }
+
+    /**
+     * Re-subscribe shared (secondary) devices through the primary's MQTT client
+     * once it has been replaced after a token refresh. The replacement is
+     * asynchronous, so we poll for a client object that differs from the one
+     * captured before the refresh, bounded by the constants.
+     * @param {object} primaryCtx - the primary MQTT DeviceContext
+     * @param {object|null} oldClient - the primary's MQTT client before refresh
+     * @param {number} attempt - current poll attempt
+     */
+    _reattachSharedClients(primaryCtx, oldClient, attempt) {
+        if (this._tokenReattachTimeout) {
+            clearTimeout(this._tokenReattachTimeout);
+            this._tokenReattachTimeout = null;
+        }
+        if (!this.deviceContexts.size || !primaryCtx.vacbot) {
+            return;
+        }
+        const newClient = typeof primaryCtx.vacbot.getMqttClient === 'function'
+            ? primaryCtx.vacbot.getMqttClient()
+            : null;
+        if (newClient && newClient !== oldClient) {
+            for (const ctx of this.deviceContexts.values()) {
+                if (ctx.usesSharedMqttClient && ctx.vacbot && typeof ctx.vacbot.connectShared === 'function') {
+                    try {
+                        ctx.vacbot.connectShared(newClient);
+                        this.log.debug(`[${ctx.deviceId}] Re-subscribed to refreshed shared MQTT client`);
+                    } catch (e) {
+                        this.log.debug(`[${ctx.deviceId}] connectShared after refresh failed: ${e && e.message}`);
+                    }
+                }
+            }
+            return;
+        }
+        if (attempt >= C.TOKEN_REFRESH_REATTACH_MAX_ATTEMPTS) {
+            this.log.warn('Refreshed shared MQTT client did not become available - secondary devices may need to reconnect');
+            return;
+        }
+        this._tokenReattachTimeout = setTimeout(
+            () => this._reattachSharedClients(primaryCtx, oldClient, attempt + 1),
+            C.TOKEN_REFRESH_REATTACH_INTERVAL_MS
+        );
     }
 
     _flushPendingPosition(ctx) {
