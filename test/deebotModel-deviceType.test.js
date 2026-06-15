@@ -1,7 +1,7 @@
 'use strict';
 
 const { expect } = require('chai');
-const { describe, it, beforeEach } = require('mocha');
+const { describe, it } = require('mocha');
 
 // Map from platform type to user-friendly device category (mirrors modelTypes.js in the library)
 const LIBRARY_DEVICE_CATEGORY_MAP = {

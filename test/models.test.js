@@ -275,8 +275,8 @@ describe('models', () => {
         });
         
         it('should return generic getProductName for unknown device', () => {
-             mockVacbot.deviceClass = 'unknown';
-             expect(model.getProductName()).to.equal('unknown');
+            mockVacbot.deviceClass = 'unknown';
+            expect(model.getProductName()).to.equal('unknown');
         });
     });
 });

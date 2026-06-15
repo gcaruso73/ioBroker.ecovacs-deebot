@@ -4,7 +4,7 @@ const { expect } = require('chai');
 const { describe, it, beforeEach } = require('mocha');
 const sinon = require('sinon');
 const proxyquire = require('proxyquire');
-const { createMockCtx, createMockAdapter, createMockModel } = require('./mockHelper');
+const { createMockCtx } = require('./mockHelper');
 
 // Mock helper module
 const mockHelper = {

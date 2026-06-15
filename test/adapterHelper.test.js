@@ -2,7 +2,6 @@
 
 const { expect } = require('chai');
 const { describe, it } = require('mocha');
-const proxyquire = require('proxyquire');
 const sinon = require('sinon');
 
 // Load the module

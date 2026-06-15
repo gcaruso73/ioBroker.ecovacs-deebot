@@ -4,7 +4,7 @@ const { expect } = require('chai');
 const { describe, it, beforeEach } = require('mocha');
 const sinon = require('sinon');
 const proxyquire = require('proxyquire');
-const { createMockAdapter, createMockCtx, createMockDevice } = require('./mockHelper');
+const { createMockAdapter, createMockCtx } = require('./mockHelper');
 
 const mockAdapterHelper = {
     getStateNameById: sinon.stub(),

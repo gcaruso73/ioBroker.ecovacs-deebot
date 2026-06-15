@@ -262,8 +262,7 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
         './mapHelper': mockMapHelper
     });
 
-        // Override registerReadyEvent to resolve immediately (prevents hang in connect tests)
-    const origRegisterReady = mockEventHandlersForConnect.registerReadyEvent;
+    // Override registerReadyEvent to resolve immediately (prevents hang in connect tests)
     mockEventHandlersForConnect.registerReadyEvent = function(main, vacbot, ctx, vacuum) {
         return Promise.resolve();
     };

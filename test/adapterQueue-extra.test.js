@@ -1,15 +1,13 @@
 'use strict';
 
 const { expect } = require('chai');
-const { describe, it, beforeEach } = require('mocha');
+const { describe, it } = require('mocha');
 const sinon = require('sinon');
 
 const Queue = require('../lib/adapterQueue');
 const { createMockCtx } = require('./mockHelper');
 
 describe('adapterQueue.js - feature branches', () => {
-    let ctx;
-    let queue;
 
     function createQueueWithModel(overrides) {
         const ctx = createMockCtx({

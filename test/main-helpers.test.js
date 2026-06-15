@@ -3,7 +3,6 @@
 const { expect } = require('chai');
 const { describe, it, beforeEach } = require('mocha');
 const sinon = require('sinon');
-const proxyquire = require('proxyquire');
 
 // =====================================================
 // Mock all dependencies for main.js
@@ -47,13 +46,6 @@ mockEcoVacsAPI.md5 = sinon.stub().returns('mocked-md5');
 mockEcoVacsAPI.getDeviceId = sinon.stub().returns('mocked-device-id');
 mockEcoVacsAPI.REALM = 'mocked-realm';
 
-const mockEcovacsDeebot = {
-    EcoVacsAPI: mockEcoVacsAPI,
-    countries: {
-        DE: { continent: 'EU' }
-    }
-};
-
 // Mock adapterObjects - minimal, just export the function signatures
 // We want to test main.js methods, not actually create objects
 const mockAdapterObjects = {
@@ -64,82 +56,14 @@ const mockAdapterObjects = {
     createStationObjects: sinon.stub().resolves()
 };
 
-const mockAdapterCommands = {
-    handleStateChange: sinon.stub().resolves()
-};
-
 const mockHelper = {
     getUnixTimestamp: sinon.stub().returns(12345),
     getCurrentDateAndTimeFormatted: sinon.stub().returns('2026-04-29 00:00:00')
 };
 
-const mockModelClass = class {
-    constructor() {
-        this.is950type = sinon.stub().returns(true);
-        this.getProtocol = sinon.stub().returns('MQTT/JSON');
-        this.getProductName = sinon.stub().returns('Test Model');
-        this.getDeviceClass = sinon.stub().returns('p1jij8');
-        this.getDeviceCategory = sinon.stub().returns('Vacuum Cleaner');
-        this.isSupportedFeature = sinon.stub().returns(true);
-        this.is950type = sinon.stub().returns(true);
-        this.usesMqtt = sinon.stub().returns(true);
-        this.usesXmpp = sinon.stub().returns(false);
-    }
-};
-
-const mockDeviceClass = class {
-    constructor(ctx) {
-        this.ctx = ctx;
-        this.status = null;
-    }
-    isCleaning = sinon.stub().returns(false);
-    getDevice = sinon.stub().returnsThis();
-};
-
-const mockDeviceContextClass = class {
-    constructor(adapter, deviceId, vacbot, vacuum) {
-        this.adapter = adapter;
-        this.deviceId = deviceId;
-        this.did = vacuum.did;
-        this.vacbot = vacbot;
-        this.vacuum = vacuum;
-        this.connected = false;
-        this.connectionFailed = false;
-        this.connectedTimestamp = 0;
-        this.retrypauseTimeout = null;
-        this.getStatesInterval = null;
-        this.getGetPosInterval = null;
-        this.airDryingActiveInterval = null;
-        this.airDryingStartTimestamp = 0;
-        this.unreachableWarningSent = false;
-        this.unreachableRetryTimeout = null;
-        this.unreachableRetryCount = 0;
-        this.retries = 0;
-        this.getModel = sinon.stub().returns(new mockModelClass());
-        this.getDevice = sinon.stub().returns(new mockDeviceClass(this));
-        this.getModelType = sinon.stub().returns('950');
-        this.statePath = sinon.stub().callsFake((p) => this.deviceId + '.' + p);
-        this.adapterProxy = {
-            setStateConditional: sinon.stub(),
-            setStateConditionalAsync: sinon.stub().resolves(),
-            createObjectNotExists: sinon.stub().resolves(),
-            getStateAsync: sinon.stub().resolves({ val: null })
-        };
-    }
-};
-
-const mockMapObjects = {
-    processMaps: sinon.stub().resolves()
-};
-
-const mockMapHelper = {};
-
 // We need to require main AFTER setting up the ecovacs-deebot mock
 // because the require of ecovacs-deebot happens at module level
 describe('main.js - helper methods', () => {
-    let EcovacsDeebot;
-    let adapter;
-
     beforeEach(() => {
         // Reset all stubs
         Object.values(mockAdapterObjects).forEach(s => {
@@ -147,16 +71,6 @@ describe('main.js - helper methods', () => {
         });
         mockHelper.getUnixTimestamp.reset();
         mockHelper.getUnixTimestamp.returns(12345);
-
-        // Re-create the adapter instance with proxyquire
-        // We need to do this each time because sinon stubs get consumed
-        const nodeMachineIdStub = {
-            machineIdSync: sinon.stub().returns('test-machine-id')
-        };
-
-        // It's better to create a fresh proxyquire for each test
-        // but that won't work well. Instead, we'll create the adapter
-        // once with a custom approach.
     });
 
     describe('isAuthError', () => {

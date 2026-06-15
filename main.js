@@ -32,8 +32,8 @@ class EcovacsDeebot extends utils.Adapter {
         super(
             Object.assign(
                 options || {}, {
-                name: 'ecovacs-deebot'
-            }
+                    name: 'ecovacs-deebot'
+                }
             )
         );
         this._deviceConnectionTimeout = null;
@@ -97,12 +97,6 @@ class EcovacsDeebot extends utils.Adapter {
             this.log.error('No password configured. Please check adapter config.');
         }
         this.subscribeStates('*');
-
-        // Self-test: verify sendTo message routing works
-        this.log.info(`Self-test: sending sendTo to ${this.namespace} with command getDeviceList`);
-        this.sendTo(this.namespace, 'getDeviceList', {}, (result) => {
-            this.log.info(`Self-test sendTo response received: ${JSON.stringify(result)}`);
-        });
     }
 
     onUnload(callback) {
@@ -1401,8 +1395,8 @@ class EcovacsDeebot extends utils.Adapter {
                             if (native) {
                                 this.extendObject(
                                     stateId, {
-                                    native: native
-                                });
+                                        native: native
+                                    });
                             }
                         } else {
                             this.log.silly("setStateConditional: '" + stateId + "' unchanged");
@@ -1465,8 +1459,8 @@ class EcovacsDeebot extends utils.Adapter {
                 if (native) {
                     this.extendObject(
                         stateId, {
-                        native: native
-                    });
+                            native: native
+                        });
                 }
             }
         } else {
@@ -2110,72 +2104,72 @@ class EcovacsDeebot extends utils.Adapter {
             if (state) {
                 ctx.adapterProxy.createChannelNotExists('info.extended.airDryingDateTime',
                     'Air drying process related timestamps').then(() => {
-                        let lastEndTimestamp = 0;
-                        if (state.val !== isAirDrying) {
-                            if ((state.val === false) && (isAirDrying === true)) {
-                                ctx.airDryingStartTimestamp = timestamp;
-                                ctx.adapterProxy.createObjectNotExists(
-                                    'info.extended.airDryingDateTime.startTimestamp', 'Start timestamp of the air drying process',
-                                    'number', 'value', false, 0, '').then(() => {
-                                        ctx.adapterProxy.setStateConditional('info.extended.airDryingDateTime.startTimestamp', timestamp, true);
-                                        if (!ctx.airDryingActiveInterval) {
-                                            this.setAirDryingActiveTime(ctx).then(() => {
-                                                ctx.airDryingActiveInterval = setInterval(() => {
-                                                    (async () => {
-                                                        await this.setAirDryingActiveTime(ctx);
-                                                    })();
-                                                }, C.AIR_DRYING_INTERVAL_MS);
-                                                this.log.debug('Set airDryingActiveInterval');
-                                            });
-                                        }
-                                    });
-                                ctx.adapterProxy.createObjectNotExists(
-                                    'info.extended.airDryingDateTime.endTimestamp', 'End timestamp of the air drying process',
-                                    'number', 'value', false, 0, '').then(() => {
-                                        ctx.adapterProxy.setStateConditional('info.extended.airDryingDateTime.endTimestamp', 0, true);
-                                    });
-                            } else {
-                                lastEndTimestamp = timestamp;
-                                ctx.adapterProxy.setStateConditional('info.extended.airDryingDateTime.endTimestamp', timestamp, true);
-                                this.setAirDryingActiveTime(ctx).then(() => {
-                                    if (ctx.airDryingActiveInterval) {
-                                        clearInterval(ctx.airDryingActiveInterval);
-                                        ctx.airDryingActiveInterval = null;
-                                        this.log.debug('Clear airDryingActiveInterval');
-                                    }
-                                    setTimeout(() => {
-                                        ctx.adapterProxy.setStateConditional('info.extended.airDryingActiveTime', 0, true);
-                                        ctx.adapterProxy.setStateConditional('info.extended.airDryingRemainingTime', 0, true);
-                                        ctx.adapterProxy.setStateConditional('info.extended.airDryingDateTime.startTimestamp', 0, true);
-                                        ctx.adapterProxy.setStateConditional('info.extended.airDryingDateTime.endTimestamp', 0, true);
-                                        ctx.airDryingStartTimestamp = 0;
-                                        this.log.debug('Reset air drying active time and timestamp states after 60 seconds');
-                                    }, C.AIR_DRYING_RESET_DELAY_MS);
-                                });
-                                this.log.info(`Air drying process finished`);
-                            }
-                        }
-                        ctx.adapterProxy.setStateConditional('info.extended.airDryingActive', isAirDrying, true);
-                        const lastStartTimestamp = ctx.airDryingStartTimestamp;
-                        if (lastStartTimestamp > 0) {
-                            const startDateTime = this.formatDate(lastStartTimestamp, 'TT.MM.JJJJ SS:mm:ss');
+                    let lastEndTimestamp = 0;
+                    if (state.val !== isAirDrying) {
+                        if ((state.val === false) && (isAirDrying === true)) {
+                            ctx.airDryingStartTimestamp = timestamp;
                             ctx.adapterProxy.createObjectNotExists(
-                                'info.extended.airDryingDateTime.startDateTime', 'Start date and time of the air drying process',
-                                'string', 'value', false, '', '').then(() => {
-                                    ctx.adapterProxy.setStateConditional('info.extended.airDryingDateTime.startDateTime', startDateTime, true);
-                                });
+                                'info.extended.airDryingDateTime.startTimestamp', 'Start timestamp of the air drying process',
+                                'number', 'value', false, 0, '').then(() => {
+                                ctx.adapterProxy.setStateConditional('info.extended.airDryingDateTime.startTimestamp', timestamp, true);
+                                if (!ctx.airDryingActiveInterval) {
+                                    this.setAirDryingActiveTime(ctx).then(() => {
+                                        ctx.airDryingActiveInterval = setInterval(() => {
+                                            (async () => {
+                                                await this.setAirDryingActiveTime(ctx);
+                                            })();
+                                        }, C.AIR_DRYING_INTERVAL_MS);
+                                        this.log.debug('Set airDryingActiveInterval');
+                                    });
+                                }
+                            });
                             ctx.adapterProxy.createObjectNotExists(
-                                'info.extended.airDryingDateTime.endDateTime', 'End date and time of the air drying process',
-                                'string', 'value', false, '', '').then(() => {
-                                    ctx.adapterProxy.setStateConditional('info.extended.airDryingDateTime.endDateTime', '', true);
-                                });
-                            this.log.info(`Air drying process started`);
+                                'info.extended.airDryingDateTime.endTimestamp', 'End timestamp of the air drying process',
+                                'number', 'value', false, 0, '').then(() => {
+                                ctx.adapterProxy.setStateConditional('info.extended.airDryingDateTime.endTimestamp', 0, true);
+                            });
+                        } else {
+                            lastEndTimestamp = timestamp;
+                            ctx.adapterProxy.setStateConditional('info.extended.airDryingDateTime.endTimestamp', timestamp, true);
+                            this.setAirDryingActiveTime(ctx).then(() => {
+                                if (ctx.airDryingActiveInterval) {
+                                    clearInterval(ctx.airDryingActiveInterval);
+                                    ctx.airDryingActiveInterval = null;
+                                    this.log.debug('Clear airDryingActiveInterval');
+                                }
+                                setTimeout(() => {
+                                    ctx.adapterProxy.setStateConditional('info.extended.airDryingActiveTime', 0, true);
+                                    ctx.adapterProxy.setStateConditional('info.extended.airDryingRemainingTime', 0, true);
+                                    ctx.adapterProxy.setStateConditional('info.extended.airDryingDateTime.startTimestamp', 0, true);
+                                    ctx.adapterProxy.setStateConditional('info.extended.airDryingDateTime.endTimestamp', 0, true);
+                                    ctx.airDryingStartTimestamp = 0;
+                                    this.log.debug('Reset air drying active time and timestamp states after 60 seconds');
+                                }, C.AIR_DRYING_RESET_DELAY_MS);
+                            });
+                            this.log.info(`Air drying process finished`);
                         }
-                        if (lastEndTimestamp > 0) {
-                            const endDateTime = this.formatDate(lastEndTimestamp, 'TT.MM.JJJJ SS:mm:ss');
-                            ctx.adapterProxy.setStateConditional('info.extended.airDryingDateTime.endDateTime', endDateTime, true);
-                        }
-                    });
+                    }
+                    ctx.adapterProxy.setStateConditional('info.extended.airDryingActive', isAirDrying, true);
+                    const lastStartTimestamp = ctx.airDryingStartTimestamp;
+                    if (lastStartTimestamp > 0) {
+                        const startDateTime = this.formatDate(lastStartTimestamp, 'TT.MM.JJJJ SS:mm:ss');
+                        ctx.adapterProxy.createObjectNotExists(
+                            'info.extended.airDryingDateTime.startDateTime', 'Start date and time of the air drying process',
+                            'string', 'value', false, '', '').then(() => {
+                            ctx.adapterProxy.setStateConditional('info.extended.airDryingDateTime.startDateTime', startDateTime, true);
+                        });
+                        ctx.adapterProxy.createObjectNotExists(
+                            'info.extended.airDryingDateTime.endDateTime', 'End date and time of the air drying process',
+                            'string', 'value', false, '', '').then(() => {
+                            ctx.adapterProxy.setStateConditional('info.extended.airDryingDateTime.endDateTime', '', true);
+                        });
+                        this.log.info(`Air drying process started`);
+                    }
+                    if (lastEndTimestamp > 0) {
+                        const endDateTime = this.formatDate(lastEndTimestamp, 'TT.MM.JJJJ SS:mm:ss');
+                        ctx.adapterProxy.setStateConditional('info.extended.airDryingDateTime.endDateTime', endDateTime, true);
+                    }
+                });
             }
         });
     }

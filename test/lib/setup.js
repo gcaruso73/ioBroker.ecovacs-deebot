@@ -328,7 +328,6 @@ function installJsController(cb) {
                     });
                 } else {
                     console.log('Setup js-controller...');
-                    let __pid;
                     if (debug) {
                         // start controller
                         child_process.exec('node ' + appName + '.js setup first', {
@@ -474,22 +473,22 @@ function setupController(cb) {
 }
 
 function getSecret() {
-    var dataDir = rootDir + 'tmp/' + appName + '-data/';
+    const dataDir = rootDir + 'tmp/' + appName + '-data/';
 
     try {
-        var objs = fs.readFileSync(dataDir + 'objects.json');
+        let objs = fs.readFileSync(dataDir + 'objects.json');
         objs = JSON.parse(objs);
 
         return objs['system.config'].native.secret;
     } catch (e) {
-        console.warn("Could not load secret. Reason: " + e);
+        console.warn('Could not load secret. Reason: ' + e);
         return null;
     }
 }
 
 function encrypt (key, value) {
-    var result = '';
-    for (var i = 0; i < value.length; ++i) {
+    let result = '';
+    for (let i = 0; i < value.length; ++i) {
         result += String.fromCharCode(key[i % key.length].charCodeAt(0) ^ value.charCodeAt(i));
     }
     return result;
@@ -736,7 +735,7 @@ function getAdapterConfig(instance) {
     return objects[id];
 }
 
-if (typeof module !== undefined && module.parent) {
+if (typeof module !== 'undefined' && module.parent) {
     module.exports.getAdapterConfig = getAdapterConfig;
     module.exports.setAdapterConfig = setAdapterConfig;
     module.exports.startController  = startController;

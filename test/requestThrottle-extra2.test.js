@@ -70,7 +70,7 @@ describe('RequestThrottle - extended edge cases', function() {
     describe('Constructor edge cases', function() {
         it('should handle negative maxRequests', function() {
             const t = new RequestThrottle({ maxRequests: -1 });
-            expect(t.maxRequests).to.equal(-1)
+            expect(t.maxRequests).to.equal(-1);
             expect(t.canProceed()).to.be.false;
         });
 
