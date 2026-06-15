@@ -34,6 +34,7 @@
     "node": ">=22.15"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@iobroker/adapter-dev": "^1.5.0",
     "@iobroker/testing": "^5.2.2",
     "@types/chai": "^5.2.3",
@@ -46,6 +47,7 @@
     "chai": "^6.2.2",
     "chai-as-promised": "^8.0.2",
     "eslint": "^10.4.1",
+    "globals": "^17.6.0",
     "mocha": "^11.7.6",
     "nyc": "^18.0.0",
     "proxyquire": "^2.1.3",
