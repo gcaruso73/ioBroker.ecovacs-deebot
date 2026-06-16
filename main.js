@@ -143,6 +143,10 @@ class EcovacsDeebot extends utils.Adapter {
                     clearTimeout(ctx._initialGetStatesTimeout);
                     ctx._initialGetStatesTimeout = null;
                 }
+                if (ctx._recoveryRefetchTimeout) {
+                    clearTimeout(ctx._recoveryRefetchTimeout);
+                    ctx._recoveryRefetchTimeout = null;
+                }
             }
             if (this.globalMqttUnreachableTimeout) {
                 clearTimeout(this.globalMqttUnreachableTimeout);
@@ -162,7 +166,7 @@ class EcovacsDeebot extends utils.Adapter {
     }
 
     async onMessage(obj) {
-        this.log.info(`onMessage received: command=${obj?.command} from=${obj?.from}`);
+        this.log.debug(`onMessage received: command=${obj?.command} from=${obj?.from}`);
         if (obj && obj.command === 'loginAndFetchDevices') {
             this.log.info('Received loginAndFetchDevices request from admin interface');
             try {
@@ -1171,8 +1175,14 @@ class EcovacsDeebot extends utils.Adapter {
         this.updateConnectionState();
         this.resetErrorStates(ctx);
 
-        // Re-fetch device states immediately since some may have been missed
-        setTimeout(() => {
+        // Re-fetch device states immediately since some may have been missed.
+        // Tracked on ctx so it can be cleared on unload (see onUnload), avoiding
+        // a callback firing against a torn-down context.
+        if (ctx._recoveryRefetchTimeout) {
+            clearTimeout(ctx._recoveryRefetchTimeout);
+        }
+        ctx._recoveryRefetchTimeout = setTimeout(() => {
+            ctx._recoveryRefetchTimeout = null;
             if (ctx.connected && !ctx.connectionFailed) {
                 this.log.debug(`[${nick}] Triggering state re-fetch after recovery`);
                 ctx.commandQueue.addStandardGetCommands();
