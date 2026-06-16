@@ -50,10 +50,13 @@ class EcovacsDeebot extends utils.Adapter {
         this.password = '';
         this.authFailed = false;
 
-        // Global request throttle: max 10 requests per 30 seconds across all devices
+        // Global request throttle — the hard cloud-request rate cap. Starts at
+        // one device's budget and is scaled by device count in connect(). See
+        // the "Request budget" note in lib/constants.js for how this interacts
+        // with the per-queue pacing delay.
         this.requestThrottle = new RequestThrottle({
-            maxRequests: 10,
-            windowMs: 30000
+            maxRequests: C.REQUEST_THROTTLE_MAX_PER_DEVICE,
+            windowMs: C.REQUEST_THROTTLE_WINDOW_MS
         });
 
         // Global MQTT unreachable state - when set, ALL device requests are paused
@@ -483,7 +486,12 @@ class EcovacsDeebot extends utils.Adapter {
             });
 
             const numberOfDevices = Object.keys(devices).length;
-            this.requestThrottle.maxRequests = Math.max(10, numberOfDevices * 10);
+            // Scale the shared budget by device count so each device keeps its
+            // own ~REQUEST_THROTTLE_MAX_PER_DEVICE-per-window allowance.
+            this.requestThrottle.maxRequests = Math.max(
+                C.REQUEST_THROTTLE_MAX_PER_DEVICE,
+                numberOfDevices * C.REQUEST_THROTTLE_MAX_PER_DEVICE
+            );
             if (numberOfDevices === 0) {
                 this.log.warn('Successfully connected to Ecovacs server, but no devices found. Exiting ...');
                 this.setConnection(false);
