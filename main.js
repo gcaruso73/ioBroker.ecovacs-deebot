@@ -146,6 +146,10 @@ class EcovacsDeebot extends utils.Adapter {
                     clearTimeout(ctx._recoveryRefetchTimeout);
                     ctx._recoveryRefetchTimeout = null;
                 }
+                if (ctx._airDryingResetTimeout) {
+                    clearTimeout(ctx._airDryingResetTimeout);
+                    ctx._airDryingResetTimeout = null;
+                }
             }
             if (this.globalMqttUnreachableTimeout) {
                 clearTimeout(this.globalMqttUnreachableTimeout);
@@ -386,12 +390,19 @@ class EcovacsDeebot extends utils.Adapter {
                 clearInterval(ctx1.airDryingActiveInterval);
                 ctx1.airDryingActiveInterval = null;
             }
-            // Tracked init-get-states timer (set by registerReadyEvent).
-            // Must be cleared so a delayed initial command burst cannot
-            // fire against a stale ctx after we recreate everything.
+            // Tracked one-shot timers: clear so a delayed callback cannot fire
+            // against a stale ctx after we recreate everything.
             if (ctx1._initialGetStatesTimeout) {
                 clearTimeout(ctx1._initialGetStatesTimeout);
                 ctx1._initialGetStatesTimeout = null;
+            }
+            if (ctx1._recoveryRefetchTimeout) {
+                clearTimeout(ctx1._recoveryRefetchTimeout);
+                ctx1._recoveryRefetchTimeout = null;
+            }
+            if (ctx1._airDryingResetTimeout) {
+                clearTimeout(ctx1._airDryingResetTimeout);
+                ctx1._airDryingResetTimeout = null;
             }
             this.stopPolling(ctx1);
             try {
@@ -2098,7 +2109,13 @@ class EcovacsDeebot extends utils.Adapter {
                                     ctx.airDryingActiveInterval = null;
                                     this.log.debug('Clear airDryingActiveInterval');
                                 }
-                                setTimeout(() => {
+                                // Tracked on ctx so it can be cleared on unload /
+                                // reconnect and cannot fire against a torn-down context.
+                                if (ctx._airDryingResetTimeout) {
+                                    clearTimeout(ctx._airDryingResetTimeout);
+                                }
+                                ctx._airDryingResetTimeout = setTimeout(() => {
+                                    ctx._airDryingResetTimeout = null;
                                     ctx.adapterProxy.setStateConditional('info.extended.airDryingActiveTime', 0, true);
                                     ctx.adapterProxy.setStateConditional('info.extended.airDryingRemainingTime', 0, true);
                                     ctx.adapterProxy.setStateConditional('info.extended.airDryingDateTime.startTimestamp', 0, true);

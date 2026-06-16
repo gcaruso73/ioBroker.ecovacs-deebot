@@ -177,10 +177,12 @@ describe('deviceContext.js - DeviceContext class', () => {
             expect(adapter.setStateConditional.firstCall.args[0]).to.equal('test_device.info.battery');
         });
 
-        it('should pass through non-prefix methods unchanged', () => {
+        it('should expose only the prefixed helper methods (no passthrough)', () => {
             const ctx = createCtx();
-            const result = ctx.adapterProxy.log;
-            expect(result).to.equal(adapter.log);
+            // adapterProxy is an explicit wrapper, not a Proxy over the adapter,
+            // so non-helper members like `log` are intentionally not exposed.
+            expect(ctx.adapterProxy.setStateConditional).to.be.a('function');
+            expect(ctx.adapterProxy.log).to.be.undefined;
         });
 
         it('should prefix for createObjectNotExists', () => {
