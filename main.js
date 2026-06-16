@@ -197,17 +197,6 @@ class EcovacsDeebot extends utils.Adapter {
         }
     }
 
-    disconnect(ctx, disconnectVacbot) {
-        this.setConnection(false);
-        if (disconnectVacbot && ctx.vacbot) {
-            if (ctx.vacbot.client && typeof ctx.vacbot.client.removeAllListeners === 'function') {
-                ctx.vacbot.client.removeAllListeners();
-            }
-            ctx.disconnecting = true;
-            ctx.vacbot.disconnect();
-        }
-    }
-
     /**
      * Centralizes the credential boilerplate shared by every login path:
      * password hash, machine-derived deviceId, country-code normalization,
