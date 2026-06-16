@@ -202,6 +202,36 @@ class EcovacsDeebot extends utils.Adapter {
         }
     }
 
+    /**
+     * Centralizes the credential boilerplate shared by every login path:
+     * password hash, machine-derived deviceId, country-code normalization,
+     * continent lookup and authDomain default.
+     * @param {{password: string, countrycode?: string, authDomain?: string}} opts
+     */
+    buildAuthParams({ password, countrycode, authDomain }) {
+        const passwordHash = EcoVacsAPI.md5(password);
+        const deviceId = EcoVacsAPI.getDeviceId(nodeMachineId.machineIdSync(), 0);
+        const countryCode = (countrycode || 'de').toLowerCase();
+        const continent = (ecovacsDeebot.countries)[countryCode.toUpperCase()]?.continent?.toLowerCase() || 'eu';
+        const authDomainValue = authDomain || 'ecovacs.com';
+        return { passwordHash, deviceId, countryCode, continent, authDomainValue };
+    }
+
+    /**
+     * Single login path: constructs an EcoVacsAPI instance, authenticates and
+     * fetches the raw device list. Callers are responsible for storing the api
+     * (e.g. for token refresh) and for formatting the returned devices.
+     * @param {{email: string, password: string, countrycode?: string, authDomain?: string}} credentials
+     * @returns {Promise<{api: Object, devices: Object[], auth: Object}>}
+     */
+    async authenticate({ email, password, countrycode, authDomain }) {
+        const auth = this.buildAuthParams({ password, countrycode, authDomain });
+        const api = new EcoVacsAPI(auth.deviceId, auth.countryCode, auth.continent, auth.authDomainValue);
+        await api.connect(email, auth.passwordHash);
+        const devices = /** @type {Object[]} */ (await api.devices());
+        return { api, devices, auth };
+    }
+
     async loginAndFetchDevices(credentials) {
         const { email, password, countrycode, authDomain } = credentials;
 
@@ -209,18 +239,10 @@ class EcovacsDeebot extends utils.Adapter {
             throw new Error('Email and password are required');
         }
 
-        const passwordHash = EcoVacsAPI.md5(password);
-        const deviceId = EcoVacsAPI.getDeviceId(nodeMachineId.machineIdSync(), 0);
-        const countryCode = (countrycode || 'de').toLowerCase();
-        const continent = (ecovacsDeebot.countries)[countryCode.toUpperCase()]?.continent?.toLowerCase() || 'eu';
-        const authDomainValue = authDomain || 'ecovacs.com';
-
-        this.log.info(`Attempting login for device discovery: ${email} (${countryCode})`);
+        this.log.info(`Attempting login for device discovery: ${email} (${(countrycode || 'de').toLowerCase()})`);
 
         try {
-            const api = new EcoVacsAPI(deviceId, countryCode, continent, authDomainValue);
-            await api.connect(email, passwordHash);
-            const devices = /** @type {Object[]} */ (await api.devices());
+            const { devices } = await this.authenticate({ email, password, countrycode, authDomain });
 
             const numberOfDevices = Object.keys(devices).length;
             this.log.info(`Device discovery successful. Found ${numberOfDevices} device(s)`);
@@ -267,18 +289,10 @@ class EcovacsDeebot extends utils.Adapter {
             return [];
         }
 
-        const passwordHash = EcoVacsAPI.md5(password);
-        const deviceId = EcoVacsAPI.getDeviceId(nodeMachineId.machineIdSync(), 0);
-        const countryCode = (countrycode || 'de').toLowerCase();
-        const continent = (ecovacsDeebot.countries)[countryCode.toUpperCase()]?.continent?.toLowerCase() || 'eu';
-        const authDomainValue = authDomain || 'ecovacs.com';
-
-        this.log.info(`Fetching device list for admin UI: ${email} (${countryCode})`);
+        this.log.info(`Fetching device list for admin UI: ${email} (${(countrycode || 'de').toLowerCase()})`);
 
         try {
-            const api = new EcoVacsAPI(deviceId, countryCode, continent, authDomainValue);
-            await api.connect(email, passwordHash);
-            const devices = /** @type {Object[]} */ (await api.devices());
+            const { devices } = await this.authenticate({ email, password, countrycode, authDomain });
 
             const numberOfDevices = Object.keys(devices).length;
             this.log.info(`Device list fetch successful. Found ${numberOfDevices} device(s)`);
@@ -448,10 +462,6 @@ class EcovacsDeebot extends utils.Adapter {
         }
 
         try {
-            const password_hash = EcoVacsAPI.md5(this.password);
-            const deviceId = EcoVacsAPI.getDeviceId(nodeMachineId.machineIdSync(), 0);
-            const continent = (ecovacsDeebot.countries)[this.config.countrycode.toUpperCase()].continent.toLowerCase();
-
             let authDomain = '';
             if (this.getConfigValue('authDomain') !== '') {
                 authDomain = this.getConfigValue('authDomain');
@@ -463,10 +473,14 @@ class EcovacsDeebot extends utils.Adapter {
             // firing duplicate logins after a reconnect.
             this.disableTokenRefresh(this.api);
 
-            const api = new EcoVacsAPI(deviceId, this.config.countrycode, continent, authDomain);
-            await api.connect(this.config.email, password_hash);
+            const { api, devices, auth } = await this.authenticate({
+                email: this.config.email,
+                password: this.password,
+                countrycode: this.config.countrycode,
+                authDomain
+            });
             this.api = api;
-            const devices = /** @type {Object[]} */ (await api.devices());
+            const continent = auth.continent;
 
             // Sort devices by did to ensure stable and deterministic ordering across restarts
             devices.sort((a, b) => {
@@ -602,7 +616,7 @@ class EcovacsDeebot extends utils.Adapter {
             // device was skipped (e.g. unsupported XML models) leaves a refresh
             // timer running with no VacBot to apply the token to.
             if (this.deviceContexts.size > 0) {
-                this.enableTokenRefresh(api, this.config.email, password_hash);
+                this.enableTokenRefresh(api, this.config.email, auth.passwordHash);
             } else {
                 this.log.debug('No devices were created - skipping automatic token refresh');
             }
@@ -1675,16 +1689,22 @@ class EcovacsDeebot extends utils.Adapter {
         return authErrorPatterns.some((pattern) => pattern.test(message));
     }
 
+    /**
+     * Surfaces an account/adapter-level error (missing config or a failed
+     * login). These are not tied to a specific device, so they are written to
+     * the global info.error / info.errorCode states. Per-device errors go
+     * through debouncedSetError(ctx, ...) which writes device-prefixed states.
+     * @param {string} message
+     * @param {boolean} [stop] - also clear the global connection indicator
+     */
     error(message, stop) {
         if (stop) {
             this.setConnection(false);
         }
-        const pattern = /code 0002/;
-        if (pattern.test(message)) {
-            message = 'reconnecting';
-        } else {
-            this.log.error(message);
-        }
+        // Always log and surface the real message. (Previously a "code 0002"
+        // message was rewritten to "reconnecting" and the log suppressed, but
+        // nothing here ever reconnects — that just hid the actual error.)
+        this.log.error(message);
         this.errorCode = '-9';
         this.setStateConditional('info.errorCode', this.errorCode, true);
         this.setStateConditional('info.error', message, true);
