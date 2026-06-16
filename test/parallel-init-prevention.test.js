@@ -3,18 +3,18 @@
 /**
  * Tests that protect against the "parallel instantiations causing high load"
  * problem observed after several days of uptime, where a single device's
- * 'ready' event fires repeatedly (due to MQTT auto-reconnect and leaked
- * MQTT clients) and re-runs the entire heavy initialization pipeline each
- * time, flooding the device with command bursts and the log with
- * "successfully initialized" lines.
+ * heavy initialization pipeline could run repeatedly, flooding the device with
+ * command bursts and the log with "successfully initialized" lines.
  *
- * The four protections under test are documented in the analysis preceding
- * the implementation:
+ * Since ecovacs-deebot alpha.21 the library closes leaked MQTT clients on
+ * reconnect and exposes a one-shot 'initialized' event (alongside the
+ * edge-triggered 'ready'), so the adapter drives heavy init from 'initialized'
+ * and no longer needs its own debounce / idempotency guards:
  *
- *   A. Idempotent 'ready' handler  - heavy init runs only once per ctx
- *   B. Disconnect-before-reconnect - retry paths must not leak MQTT clients
- *   C. Ready debounce              - rapid duplicate ready emissions are coalesced
- *   D. Tracked init-get-states     - the post-ready setTimeout cannot accumulate
+ *   A. Heavy init via 'initialized' - the one-shot event runs heavy init once;
+ *                                     'ready' is the light reconnect path only
+ *   B. Disconnect-before-reconnect  - retry paths must not leak MQTT clients
+ *   D. Tracked init-get-states      - the post-init setTimeout cannot accumulate
  */
 
 const { expect } = require('chai');
@@ -78,12 +78,14 @@ function buildEventHandlerFixtures() {
         }
     };
 
-    // Capture the listener that registerReadyEvent registers so we can
-    // emit 'ready' on demand from the test.
+    // Capture the listeners that registerReadyEvent registers so we can emit
+    // 'ready' (light path) and 'initialized' (one-shot heavy init) on demand.
     let readyHandler = null;
+    let initializedHandler = null;
     const vacbot = {
         on: sinon.stub().callsFake((eventName, handler) => {
             if (eventName === 'ready') readyHandler = handler;
+            if (eventName === 'initialized') initializedHandler = handler;
         })
     };
 
@@ -101,16 +103,17 @@ function buildEventHandlerFixtures() {
 
     return {
         main, ctx, vacbot, vacuum, adapterObjects, eventHandlers,
-        emitReady: () => readyHandler && readyHandler()
+        emitReady: () => readyHandler && readyHandler(),
+        emitInitialized: () => initializedHandler && initializedHandler()
     };
 }
 
 describe('parallel-init-prevention.test.js', () => {
 
     // -----------------------------------------------------------------------
-    // Fix A: idempotent 'ready' handler
+    // Fix A: heavy init runs once, driven by the one-shot 'initialized' event
     // -----------------------------------------------------------------------
-    describe("Fix A - 'ready' handler is idempotent", () => {
+    describe("Fix A - heavy init is driven by the one-shot 'initialized' event", () => {
         let f;
         let clock;
 
@@ -124,14 +127,26 @@ describe('parallel-init-prevention.test.js', () => {
             clock.restore();
         });
 
-        it('runs the heavy init pipeline exactly once across multiple ready emissions', async () => {
-            f.emitReady();
+        it('runs the heavy init pipeline on the initialized event', async () => {
+            f.emitInitialized();
             await Promise.resolve(); await Promise.resolve();
             await clock.tickAsync(0); await clock.tickAsync(0);
 
-            // Simulate 4 more ready emissions arriving over the next minute
-            // (e.g. from leaked MQTT clients or library auto-reconnects).
-            for (let i = 0; i < 4; i++) {
+            expect(f.adapterObjects.createAdditionalObjects.callCount,
+                'createAdditionalObjects should run once').to.equal(1);
+            expect(f.adapterObjects.createDeviceCapabilityObjects.callCount,
+                'createDeviceCapabilityObjects should run once').to.equal(1);
+            expect(f.adapterObjects.createStationObjects.callCount,
+                'createStationObjects should run once').to.equal(1);
+            expect(f.main.setInitialStateValues.callCount,
+                'setInitialStateValues should run once').to.equal(1);
+        });
+
+        it('never runs the heavy init pipeline from a ready event', async () => {
+            // 'ready' is the light path only; the library emits 'initialized'
+            // exactly once for the heavy work, so spurious ready emissions
+            // (auto-reconnects, token refreshes) must not rebuild anything.
+            for (let i = 0; i < 5; i++) {
                 await clock.tickAsync(30000);
                 f.emitReady();
                 await Promise.resolve(); await Promise.resolve();
@@ -139,20 +154,17 @@ describe('parallel-init-prevention.test.js', () => {
             await clock.tickAsync(0);
 
             expect(f.adapterObjects.createAdditionalObjects.callCount,
-                'createAdditionalObjects should run only once').to.equal(1);
-            expect(f.adapterObjects.createDeviceCapabilityObjects.callCount,
-                'createDeviceCapabilityObjects should run only once').to.equal(1);
-            expect(f.adapterObjects.createStationObjects.callCount,
-                'createStationObjects should run only once').to.equal(1);
+                'createAdditionalObjects must not run from ready').to.equal(0);
             expect(f.main.setInitialStateValues.callCount,
-                'setInitialStateValues should run only once').to.equal(1);
+                'setInitialStateValues must not run from ready').to.equal(0);
         });
 
-        it('logs "successfully initialized" only once per ctx, even after many ready emissions', async () => {
-            f.emitReady();
+        it('logs "successfully initialized", "Library version" and "Product name" once', async () => {
+            f.emitInitialized();
             await Promise.resolve(); await Promise.resolve();
             await clock.tickAsync(0);
 
+            // Further ready emissions (light path) must not re-log init lines.
             for (let i = 0; i < 5; i++) {
                 await clock.tickAsync(30000);
                 f.emitReady();
@@ -172,60 +184,8 @@ describe('parallel-init-prevention.test.js', () => {
             expect(productLogCalls.length, 'expected exactly one "Product name" log').to.equal(1);
         });
 
-        it('a second ready arriving while the first heavy init is still running does not start a parallel heavy init', async () => {
-            // Review finding #2: there is a race window between the debounce
-            // expiring (>READY_DEBOUNCE_MS) and ctx._readyInitDone being set
-            // at the very end of the heavy path. We close it with a
-            // synchronous "in-progress" flag set at the top of the async
-            // IIFE, so a concurrent ready emission cannot kick off a second
-            // heavy pipeline.
-            //
-            // Make createObjectNotExists slow so the first heavy init is
-            // still in-flight when the second 'ready' arrives.
-            let resolveCreateObj;
-            f.ctx.adapterProxy.createObjectNotExists = sinon.stub().returns(
-                new Promise((res) => { resolveCreateObj = res; })
-            );
-
-            f.emitReady();
-            // Give the IIFE a chance to start and reach the slow await.
-            for (let i = 0; i < 5; i++) {
-                await Promise.resolve();
-                await clock.tickAsync(0);
-            }
-            expect(f.ctx.adapterProxy.createObjectNotExists.callCount,
-                'first heavy init reached the slow await').to.equal(1);
-            expect(f.ctx._readyInitDone || false,
-                'first heavy init has NOT completed yet').to.equal(false);
-
-            // Tick well past the debounce window and emit a second ready.
-            await clock.tickAsync(C.READY_DEBOUNCE_MS + 1000);
-            f.emitReady();
-            for (let i = 0; i < 5; i++) {
-                await Promise.resolve();
-                await clock.tickAsync(0);
-            }
-
-            // The second ready must NOT have triggered another heavy init.
-            expect(f.ctx.adapterProxy.createObjectNotExists.callCount,
-                'createObjectNotExists must remain at 1 - no concurrent heavy init').to.equal(1);
-            expect(f.adapterObjects.createAdditionalObjects.callCount,
-                'createAdditionalObjects must remain at 1').to.equal(1);
-
-            // Let the first init finish; everything should still have run only once.
-            resolveCreateObj();
-            for (let i = 0; i < 10; i++) {
-                await Promise.resolve();
-                await clock.tickAsync(0);
-            }
-            expect(f.ctx._readyInitDone, 'first init completes').to.equal(true);
-            expect(f.main.setInitialStateValues.callCount,
-                'setInitialStateValues must remain at 1').to.equal(1);
-        });
-
-        it('still restores connection state on a duplicate ready emission (light path)', async () => {
-            // First (full) init.
-            f.emitReady();
+        it('restores connection state on every ready emission (light path)', async () => {
+            f.emitInitialized();
             await Promise.resolve(); await Promise.resolve();
             await clock.tickAsync(0);
 
@@ -234,11 +194,8 @@ describe('parallel-init-prevention.test.js', () => {
             f.main.updateDeviceConnectionState.resetHistory();
             f.main.clearUnreachableRetry.resetHistory();
 
-            // Long enough to bypass the ready-debounce (Fix C).
-            await clock.tickAsync(30000);
-
-            // Second ready arrives - should NOT redo heavy init but SHOULD
-            // re-mark the device as connected.
+            // A ready arrives on reconnect - should re-mark the device connected
+            // without redoing any heavy init.
             f.emitReady();
             await Promise.resolve(); await Promise.resolve();
             await clock.tickAsync(0);
@@ -252,51 +209,6 @@ describe('parallel-init-prevention.test.js', () => {
             // ... but the heavy pieces still ran only once.
             expect(f.adapterObjects.createAdditionalObjects.callCount).to.equal(1);
             expect(f.main.setInitialStateValues.callCount).to.equal(1);
-        });
-    });
-
-    // -----------------------------------------------------------------------
-    // Fix C: ready debounce
-    // -----------------------------------------------------------------------
-    describe('Fix C - ready emissions arriving within READY_DEBOUNCE_MS are coalesced', () => {
-        let f;
-        let clock;
-
-        beforeEach(() => {
-            clock = sinon.useFakeTimers();
-            f = buildEventHandlerFixtures();
-            f.eventHandlers.registerReadyEvent(f.main, f.vacbot, f.ctx, f.vacuum);
-        });
-
-        afterEach(() => {
-            clock.restore();
-        });
-
-        it('ignores a ready emission that arrives <READY_DEBOUNCE_MS after the previous', async () => {
-            // First ready - heavy init.
-            f.emitReady();
-            // Drain the async heavy-init pipeline (multiple awaits inside).
-            for (let i = 0; i < 10; i++) {
-                await Promise.resolve();
-                await clock.tickAsync(0);
-            }
-            expect(f.ctx._readyInitDone, 'precondition: heavy init should have completed').to.equal(true);
-
-            f.main.updateDeviceConnectionState.resetHistory();
-
-            // Second ready arrives 100 ms later - should be entirely ignored.
-            await clock.tickAsync(100);
-            f.emitReady();
-            await Promise.resolve(); await Promise.resolve();
-            await clock.tickAsync(0);
-
-            expect(f.main.updateDeviceConnectionState.called,
-                'inside the debounce window the handler should be a no-op').to.equal(false);
-        });
-
-        it('exposes READY_DEBOUNCE_MS via constants', () => {
-            expect(C.READY_DEBOUNCE_MS, 'READY_DEBOUNCE_MS must exist in lib/constants.js')
-                .to.be.a('number').and.to.be.greaterThan(0);
         });
     });
 
@@ -318,7 +230,7 @@ describe('parallel-init-prevention.test.js', () => {
         });
 
         it('stores the pending setTimeout id on the ctx so it can be cleared on unload', async () => {
-            f.emitReady();
+            f.emitInitialized();
             await Promise.resolve(); await Promise.resolve();
             await clock.tickAsync(0);
 
@@ -326,18 +238,18 @@ describe('parallel-init-prevention.test.js', () => {
                 'expected ctx._initialGetStatesTimeout to be set').to.exist;
         });
 
-        it('does not call vacbotInitialGetStates more than once even when many ready events arrive', async () => {
-            f.emitReady();
+        it('calls vacbotInitialGetStates once, and ready emissions do not schedule extra runs', async () => {
+            f.emitInitialized();
             await Promise.resolve(); await Promise.resolve();
 
-            // Several spurious ready events while the post-ready timer is pending.
+            // Spurious ready events (light path) must not schedule the timer.
             for (let i = 0; i < 5; i++) {
-                await clock.tickAsync(C.READY_DEBOUNCE_MS + 100);
+                await clock.tickAsync(1000);
                 f.emitReady();
                 await Promise.resolve(); await Promise.resolve();
             }
 
-            // Now let the post-ready timer fire.
+            // Now let the post-init timer fire.
             await clock.tickAsync(C.INITIAL_GET_COMMANDS_DELAY_MS + 100);
 
             expect(f.main.vacbotInitialGetStates.callCount,
@@ -346,9 +258,9 @@ describe('parallel-init-prevention.test.js', () => {
     });
 
     // -----------------------------------------------------------------------
-    // Fix B: main.js retry paths must disconnect before reconnect
+    // Fix B: main.js retry paths reconnect via connect() (library self-cleans)
     // -----------------------------------------------------------------------
-    describe('Fix B - retry paths in main.js disconnect existing MQTT client before reconnecting', () => {
+    describe('Fix B - retry paths in main.js reconnect via connect()', () => {
         let clock;
         let instance;
 
@@ -462,27 +374,24 @@ describe('parallel-init-prevention.test.js', () => {
             return ctx;
         }
 
-        it('scheduleUnreachableRetry: disconnects the existing vacbot before calling connect()', async () => {
+        it('scheduleUnreachableRetry: reconnects via connect() (which self-cleans the old client)', async () => {
             const ctx = makeCtx('dev1');
 
             instance.scheduleUnreachableRetry(ctx);
 
             // Run scheduled timer (first backoff slot = 30s).
             await clock.tickAsync(C.BACKOFF_SCHEDULE[0] + 100);
-            // Allow any pending microtasks (await disconnect()) to flush.
             await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
 
-            expect(ctx.vacbot.disconnect.callCount,
-                'disconnect() should be called before reconnect on retry').to.be.greaterThan(0);
             expect(ctx.vacbot.connect.callCount,
                 'connect() must be called once on retry').to.equal(1);
-
-            const disconnectOrder = ctx.vacbot.disconnect.firstCall &&
-                ctx.vacbot.disconnect.firstCall.calledBefore(ctx.vacbot.connect.firstCall);
-            expect(disconnectOrder, 'disconnect() must be called before connect()').to.equal(true);
+            // The library's connect() handles closing the previous client; the
+            // adapter no longer issues a separate disconnect() first.
+            expect(ctx.vacbot.disconnect.callCount,
+                'no separate disconnect() before reconnect').to.equal(0);
         });
 
-        it('scheduleGlobalMqttRetry: disconnects each existing vacbot before calling connect()', async () => {
+        it('scheduleGlobalMqttRetry: reconnects each existing vacbot via connect()', async () => {
             const ctxA = makeCtx('devA');
             const ctxB = makeCtx('devB');
 
@@ -493,26 +402,11 @@ describe('parallel-init-prevention.test.js', () => {
             await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
 
             for (const ctx of [ctxA, ctxB]) {
-                expect(ctx.vacbot.disconnect.callCount,
-                    `disconnect should be called for ${ctx.deviceId} before reconnect`).to.be.greaterThan(0);
                 expect(ctx.vacbot.connect.callCount,
                     `connect should be called once for ${ctx.deviceId}`).to.equal(1);
-                expect(ctx.vacbot.disconnect.firstCall.calledBefore(ctx.vacbot.connect.firstCall),
-                    `disconnect must precede connect for ${ctx.deviceId}`).to.equal(true);
+                expect(ctx.vacbot.disconnect.callCount,
+                    `no separate disconnect() for ${ctx.deviceId}`).to.equal(0);
             }
-        });
-
-        it('a thrown/rejected disconnect() does not prevent reconnect from being attempted', async () => {
-            const ctx = makeCtx('dev1');
-            ctx.vacbot.disconnect = sinon.stub().rejects(new Error('boom'));
-
-            instance.scheduleUnreachableRetry(ctx);
-
-            await clock.tickAsync(C.BACKOFF_SCHEDULE[0] + 100);
-            await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
-
-            expect(ctx.vacbot.connect.callCount,
-                'connect() must still be attempted even when disconnect() rejects').to.equal(1);
         });
 
         it('scheduleGlobalMqttRetry: one device throwing on connect() must not abort the loop for the rest', async () => {

@@ -72,7 +72,6 @@ class EcovacsDeebot extends utils.Adapter {
         this.api = null;
         this._onCredentialsUpdated = null;
         this._onCredentialsRefreshError = null;
-        this._tokenReattachTimeout = null;
     }
 
     async onReady() {
@@ -662,17 +661,12 @@ class EcovacsDeebot extends utils.Adapter {
 
     /**
      * Tear down automatic token refresh for the given API instance: cancel the
-     * scheduled refresh timer, remove our listeners, and clear any pending
-     * shared-client reattachment poll. Called before a new session is created
-     * (reconnect) and on unload, so stale timers/listeners from a previous
-     * EcovacsAPI instance cannot keep firing duplicate logins.
+     * scheduled refresh timer and remove our listeners. Called before a new
+     * session is created (reconnect) and on unload, so stale timers/listeners
+     * from a previous EcovacsAPI instance cannot keep firing duplicate logins.
      * @param {object|null} api - the EcovacsAPI instance to tear down
      */
     disableTokenRefresh(api) {
-        if (this._tokenReattachTimeout) {
-            clearTimeout(this._tokenReattachTimeout);
-            this._tokenReattachTimeout = null;
-        }
         if (!api) {
             return;
         }
@@ -698,8 +692,9 @@ class EcovacsDeebot extends utils.Adapter {
      * while shared instances only update the token in place.
      *
      * The primary's MQTT client is replaced asynchronously by the library
-     * (client.end -> connect), so any secondary devices sharing that connection
-     * are afterwards re-subscribed through the new client.
+     * (client.end -> connect). Rather than poll for the new client object, we
+     * listen once for the library's 'mqttClientReplaced' event and re-subscribe
+     * any secondary devices through the replacement client.
      * @param {string} token - the refreshed user access token
      * @returns {number} number of devices the token was applied to
      */
@@ -708,16 +703,25 @@ class EcovacsDeebot extends utils.Adapter {
             return 0;
         }
         const primaryCtx = this._getPrimaryMqttContext();
-        const oldPrimaryClient = (primaryCtx && primaryCtx.vacbot && typeof primaryCtx.vacbot.getMqttClient === 'function')
-            ? primaryCtx.vacbot.getMqttClient()
-            : null;
 
-        let updated = 0;
         let hasShared = false;
         for (const ctx of this.deviceContexts.values()) {
             if (ctx.usesSharedMqttClient) {
                 hasShared = true;
+                break;
             }
+        }
+
+        // Register the reattach listener BEFORE refreshing the primary's token,
+        // so the asynchronous client replacement it triggers cannot be missed.
+        if (primaryCtx && hasShared && primaryCtx.vacbot && typeof primaryCtx.vacbot.once === 'function') {
+            primaryCtx.vacbot.once('mqttClientReplaced', (newClient) => {
+                this._reattachSharedClients(newClient);
+            });
+        }
+
+        let updated = 0;
+        for (const ctx of this.deviceContexts.values()) {
             if (ctx.vacbot && typeof ctx.vacbot.updateUserAccessToken === 'function') {
                 try {
                     ctx.vacbot.updateUserAccessToken(token);
@@ -728,53 +732,29 @@ class EcovacsDeebot extends utils.Adapter {
             }
         }
 
-        if (primaryCtx && hasShared) {
-            this._reattachSharedClients(primaryCtx, oldPrimaryClient, 0);
-        }
         return updated;
     }
 
     /**
-     * Re-subscribe shared (secondary) devices through the primary's MQTT client
-     * once it has been replaced after a token refresh. The replacement is
-     * asynchronous, so we poll for a client object that differs from the one
-     * captured before the refresh, bounded by the constants.
-     * @param {object} primaryCtx - the primary MQTT DeviceContext
-     * @param {object|null} oldClient - the primary's MQTT client before refresh
-     * @param {number} attempt - current poll attempt
+     * Re-subscribe shared (secondary) devices through the primary's replacement
+     * MQTT client after a token refresh. Driven by the primary vacbot's
+     * 'mqttClientReplaced' event (see _applyRefreshedToken).
+     * @param {object|null} newClient - the primary's replacement MQTT client
      */
-    _reattachSharedClients(primaryCtx, oldClient, attempt) {
-        if (this._tokenReattachTimeout) {
-            clearTimeout(this._tokenReattachTimeout);
-            this._tokenReattachTimeout = null;
-        }
-        if (!this.deviceContexts.size || !primaryCtx.vacbot) {
+    _reattachSharedClients(newClient) {
+        if (!newClient || !this.deviceContexts.size) {
             return;
         }
-        const newClient = typeof primaryCtx.vacbot.getMqttClient === 'function'
-            ? primaryCtx.vacbot.getMqttClient()
-            : null;
-        if (newClient && newClient !== oldClient) {
-            for (const ctx of this.deviceContexts.values()) {
-                if (ctx.usesSharedMqttClient && ctx.vacbot && typeof ctx.vacbot.connectShared === 'function') {
-                    try {
-                        ctx.vacbot.connectShared(newClient);
-                        this.log.debug(`[${ctx.deviceId}] Re-subscribed to refreshed shared MQTT client`);
-                    } catch (e) {
-                        this.log.debug(`[${ctx.deviceId}] connectShared after refresh failed: ${e && e.message}`);
-                    }
+        for (const ctx of this.deviceContexts.values()) {
+            if (ctx.usesSharedMqttClient && ctx.vacbot && typeof ctx.vacbot.connectShared === 'function') {
+                try {
+                    ctx.vacbot.connectShared(newClient);
+                    this.log.debug(`[${ctx.deviceId}] Re-subscribed to refreshed shared MQTT client`);
+                } catch (e) {
+                    this.log.debug(`[${ctx.deviceId}] connectShared after refresh failed: ${e && e.message}`);
                 }
             }
-            return;
         }
-        if (attempt >= C.TOKEN_REFRESH_REATTACH_MAX_ATTEMPTS) {
-            this.log.warn('Refreshed shared MQTT client did not become available - secondary devices may need to reconnect');
-            return;
-        }
-        this._tokenReattachTimeout = setTimeout(
-            () => this._reattachSharedClients(primaryCtx, oldClient, attempt + 1),
-            C.TOKEN_REFRESH_REATTACH_INTERVAL_MS
-        );
     }
 
     _flushPendingPosition(ctx) {
@@ -924,17 +904,9 @@ class EcovacsDeebot extends utils.Adapter {
             this.globalMqttUnreachableTimeout = null;
             this.log.debug(`[Global] Executing global MQTT reconnect attempt #${this.globalMqttUnreachableCount}`);
 
-            // Try to reconnect ALL devices.
-            //
-            // IMPORTANT: vacbot.connect() in the upstream ecovacs-deebot
-            // library does NOT close the previous MQTT client - it just
-            // overwrites this.client with a new one, leaking the old client.
-            // Each leaked client keeps subscribing/emitting 'ready' on its
-            // own auto-reconnects, multiplying load over time.
-            //
-            // We therefore explicitly disconnect first, swallowing any error
-            // (a not-yet-subscribed client will reject from disconnect()),
-            // and only then re-issue connect().
+            // Try to reconnect ALL devices. vacbot.connect() self-cleans the
+            // previous MQTT client (ecovacs-deebot alpha.21+), so a plain
+            // reconnect via _reconnectVacbotSafely does not leak clients.
             let reconnectCount = 0;
             for (const deviceCtx of this.deviceContexts.values()) {
                 if (!deviceCtx.connected || deviceCtx.connectionFailed) {
@@ -1019,7 +991,6 @@ class EcovacsDeebot extends utils.Adapter {
             const retryModel = ctx.getModel().getProductName();
             this.log.debug(`[${retryNick} (${retryModel})] Executing reconnect attempt #${ctx.unreachableRetryCount}`);
             try {
-                // See _reconnectVacbotSafely for why we disconnect first.
                 this._reconnectVacbotSafely(ctx, `[${retryNick} (${retryModel})] `);
             } catch (e) {
                 this.log.warn(`[${retryNick} (${retryModel})] Reconnect failed: ${e.message}`);
@@ -1029,19 +1000,13 @@ class EcovacsDeebot extends utils.Adapter {
     }
 
     /**
-     * Cleanly reconnect a vacbot's MQTT client.
+     * Reconnect a vacbot's MQTT client.
      *
-     * The upstream ecovacs-deebot library's vacbot.connect() always creates
-     * a new internal MQTT client and overwrites the previous reference
-     * without disconnecting it. Without an explicit disconnect, repeated
-     * retry paths (per-device or global) accumulate parallel MQTT clients,
-     * each subscribing and re-emitting 'ready' on every auto-reconnect.
-     * Over days of uptime this manifests as multiple simultaneous device
-     * (re-)initializations and a flood of polling commands.
-     *
-     * This helper performs disconnect() first (best-effort - errors are
-     * intentionally swallowed because a not-yet-fully-subscribed client
-     * will reject from disconnect()) and then issues connect().
+     * Since ecovacs-deebot alpha.21, vacbot.connect() self-cleans: it detaches
+     * the previous client's listeners and force-closes the previously-owned
+     * client (`client.end(true)`) before installing the new one. So a plain
+     * connect() no longer leaks the old client, and we don't need to
+     * disconnect-before-connect here anymore.
      *
      * @param {object} ctx        - DeviceContext
      * @param {string} [logPrefix] - prefix for debug logs
@@ -1071,23 +1036,8 @@ class EcovacsDeebot extends utils.Adapter {
             return;
         }
 
-        // Primary (or single) device: full disconnect + reconnect.
+        // Primary (or single) device: connect() self-cleans the old client.
         try {
-            if (vacbot.client && typeof vacbot.client.removeAllListeners === 'function') {
-                vacbot.client.removeAllListeners();
-            }
-            ctx.disconnecting = true;
-            const result = vacbot.disconnect && vacbot.disconnect();
-            if (result && typeof result.then === 'function') {
-                result.catch(e => {
-                    this.log.silly(`${prefix}disconnect() before reconnect rejected: ${e && e.message}`);
-                });
-            }
-        } catch (e) {
-            this.log.silly(`${prefix}disconnect() before reconnect threw: ${e && e.message}`);
-        }
-        try {
-            ctx.disconnecting = false;
             vacbot.connect();
 
             // Propagate the new MQTT client to all secondary devices.

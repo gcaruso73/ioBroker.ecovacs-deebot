@@ -12,7 +12,7 @@ const C = require('../lib/constants');
  *  - All delay/timeout constants must be positive numbers
  *  - The backoff schedule must be a strictly increasing array
  *  - Threshold and count constants must be positive integers
- *  - READY_DEBOUNCE_MS must exist and be positive (consumed by parallel-init-prevention tests)
+ *  - INITIAL_GET_COMMANDS_DELAY_MS must exist and be positive (consumed by parallel-init-prevention tests)
  *
  * Exact millisecond values are NOT tested here because they are tuning parameters
  * that may legitimately change without altering any observable behaviour.
@@ -31,8 +31,7 @@ describe('constants.js', () => {
         'RECONNECT_COOLDOWN_MS',
         'AIR_DRYING_RESET_DELAY_MS',
         'AIR_DRYING_INTERVAL_MS',
-        'MIN_POLLING_INTERVAL_MS',
-        'READY_DEBOUNCE_MS'
+        'MIN_POLLING_INTERVAL_MS'
     ];
 
     describe('all timing constants', () => {
@@ -81,10 +80,6 @@ describe('constants.js', () => {
                     'must be a number or array'
                 );
             }
-        });
-
-        it('should have READY_DEBOUNCE_MS (required by parallel-init-prevention)', () => {
-            expect(C).to.have.property('READY_DEBOUNCE_MS').that.is.a('number').and.greaterThan(0);
         });
 
         it('should have INITIAL_GET_COMMANDS_DELAY_MS (required by parallel-init-prevention)', () => {

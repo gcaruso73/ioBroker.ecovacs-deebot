@@ -476,12 +476,12 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
             expect(result).to.be.a('Promise');
         });
 
-        it('should resolve after ready event fires and init completes', (done) => {
-            let readyCallback;
+        it('should resolve after the initialized event fires and init completes', (done) => {
+            let initializedCallback;
             const vacbot = {
                 on: (event, cb) => {
-                    if (event === 'ready') {
-                        readyCallback = cb;
+                    if (event === 'initialized') {
+                        initializedCallback = cb;
                     }
                 }
             };
@@ -524,7 +524,7 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
             };
 
             const promise = mockEventHandlers.registerReadyEvent(main, vacbot, ctx, vacuum);
-            expect(readyCallback).to.exist;
+            expect(initializedCallback).to.exist;
 
             let resolved = false;
             promise.then(() => {
@@ -532,7 +532,7 @@ describe('startup-duplicate-init.test.js - Protections Against Duplicate Initial
                 done();
             });
 
-            readyCallback();
+            initializedCallback();
 
             setTimeout(() => {
                 if (!resolved) {

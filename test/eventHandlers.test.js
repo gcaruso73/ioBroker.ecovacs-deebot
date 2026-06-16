@@ -344,13 +344,20 @@ describe('eventHandlers.js - functionality', () => {
             main.vacbotInitialGetStates = sinon.stub();
         });
 
-        it('should perform heavy init and mark ctx connected on first ready event', async () => {
-            const readyPromise = eventHandlers.registerReadyEvent(main, vacbot, ctx, vacuum);
+        it('should mark ctx connected on the ready event (light path)', () => {
+            eventHandlers.registerReadyEvent(main, vacbot, ctx, vacuum);
             events.ready();
-            await readyPromise;
 
             expect(ctx.connected).to.be.true;
-            expect(ctx._readyInitDone).to.be.true;
+            expect(main.updateDeviceConnectionState.calledWith(ctx, true)).to.be.true;
+        });
+
+        it('should perform heavy init and resolve on the initialized event', async () => {
+            const readyPromise = eventHandlers.registerReadyEvent(main, vacbot, ctx, vacuum);
+            events.initialized();
+            await readyPromise;
+
+            expect(main.setInitialStateValues.calledWith(ctx)).to.be.true;
         });
 
         it('should clear global MQTT unreachable state on ready event if set', () => {
@@ -360,8 +367,7 @@ describe('eventHandlers.js - functionality', () => {
             expect(main.clearGlobalMqttUnreachable.calledOnce).to.be.true;
         });
 
-        it('should start polling on reconnect (light path) of ready event', () => {
-            ctx._readyInitDone = true;
+        it('should start polling on every ready event when enabled (light path)', () => {
             ctx.enabled = true;
             eventHandlers.registerReadyEvent(main, vacbot, ctx, vacuum);
             events.ready();
