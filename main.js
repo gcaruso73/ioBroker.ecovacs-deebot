@@ -783,6 +783,18 @@ class EcovacsDeebot extends utils.Adapter {
         }
     }
 
+    /**
+     * Set the GLOBAL (adapter-root) connection indicator directly. Reserved for
+     * account-level transitions that affect every device: a full connect, a full
+     * teardown (reconnect/unload), "no devices found", an account-level error,
+     * or the MQTT server itself going offline. On `false` it also marks every
+     * device disconnected and tears down their timers/polling.
+     *
+     * Do NOT use this for a single device's problem — that would force all other
+     * devices offline too. Use updateDeviceConnectionState(ctx, ...) for the
+     * device and updateConnectionState() to recompute the global indicator.
+     * @param {boolean} value
+     */
     setConnection(value) {
         this.setStateConditional('info.connection', value, true);
         if (value === false) {
@@ -809,6 +821,12 @@ class EcovacsDeebot extends utils.Adapter {
         this.connected = value;
     }
 
+    /**
+     * Recompute the GLOBAL connection indicator from the per-device states:
+     * `info.connection` is true iff at least one device is connected. Call this
+     * after changing a single device's connection state so the global indicator
+     * stays consistent without forcing the other devices.
+     */
     updateConnectionState() {
         const anyConnected = Array.from(this.deviceContexts.values()).some(c => c.connected);
         this.setStateConditional('info.connection', anyConnected, true);
@@ -818,6 +836,13 @@ class EcovacsDeebot extends utils.Adapter {
         }
     }
 
+    /**
+     * Set a single device's connection state (`<deviceId>.info.connection` and
+     * its uptime). Does not touch the global indicator — pair with
+     * updateConnectionState() when a per-device change should be reflected globally.
+     * @param {object} ctx - DeviceContext
+     * @param {boolean} value
+     */
     updateDeviceConnectionState(ctx, value) {
         ctx.adapterProxy.setStateConditional('info.connection', value, true);
         if (value) {

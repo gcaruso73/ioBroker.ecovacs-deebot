@@ -274,6 +274,25 @@ describe('eventHandlers.js - functionality', () => {
             expect(ctx.connected).to.be.true;
         });
 
+        it('LastError code 0 - recomputes the global indicator without force-setting it', () => {
+            ctx.connected = false;
+            events.LastError({ code: '0', error: 'No error' });
+            expect(main.updateDeviceConnectionState.calledWith(ctx, true)).to.be.true;
+            expect(main.updateConnectionState.called, 'global derived from device states').to.be.true;
+            expect(main.setConnection.called, 'must not force the global indicator').to.be.false;
+        });
+
+        it('LastError code 404 - marks only this device offline, not all devices', () => {
+            ctx.connected = true;
+            events.LastError({ code: '404', error: 'Device not reachable' });
+            expect(ctx.connected, 'this device marked disconnected').to.be.false;
+            expect(main.updateDeviceConnectionState.calledWith(ctx, false), 'per-device state set false').to.be.true;
+            expect(main.updateConnectionState.called, 'global indicator recomputed').to.be.true;
+            expect(main.setConnection.called, 'must NOT force every device offline').to.be.false;
+            expect(ctx.connectionFailed, 'device flagged as failed').to.be.true;
+            expect(main.scheduleUnreachableRetry.calledWith(ctx)).to.be.true;
+        });
+
         it('LastError code 110 - should record dustbox removal', () => {
             events.LastError({ code: '110', error: 'Dustbox removed' });
             expect(main.addToLast20Errors.calledWith(ctx, '110', 'Dustbox removed')).to.be.true;
