@@ -59,7 +59,6 @@
     "test:js": "mocha --config test/mocharc.custom.json \"test/**/*.test.js\"",
     "test:package": "mocha test/package --exit",
     "test:unit": "mocha test/unit --exit",
-    "test:integration": "mocha test/integration --exit",
     "test": "npm run test:js && npm run test:package",
     "test:coverage": "nyc npm test",
     "lint": "eslint",
