@@ -325,42 +325,21 @@ class EcovacsDeebot extends utils.Adapter {
         if (!state) return;
         const relativeId = id.replace(this.namespace + '.', '');
         const parts = relativeId.split('.');
-        const deviceId = parts[0];
-
-        // Single device mode: route ALL state changes to the single context
-        if (this.config.singleDeviceMode) {
-            const ctx = this.deviceContexts.values().next().value;
-            if (!ctx) return;
-            const stateName = parts[parts.length - 1];
-            const subPath = relativeId;
-            if (stateName === 'enabled' && subPath === 'status.enabled') {
-                ctx.enabled = state.val;
-                if (state.val) {
-                    this.log.info(`Device control and updates enabled`);
-                    if (ctx.connected) {
-                        this.startPolling(ctx);
-                    }
-                } else {
-                    this.log.info(`Device control and updates disabled`);
-                    this.stopPolling(ctx);
-                }
-            }
-            if (!ctx.enabled && stateName !== 'enabled') return;
-            ctx._stateChangePromise = (ctx._stateChangePromise || Promise.resolve()).then(() =>
-                adapterCommands.handleStateChange(this, ctx, relativeId, state)
-            ).catch(e => this.log.error(`Error handling state change for id '${id}' with value '${state.val}': '${e}'`));
-            return;
-        }
-
-        const ctx = this.deviceContexts.get(deviceId);
-        if (!ctx) {
-            return;
-        }
-        const subPath = parts.slice(1).join('.');
         const stateName = parts[parts.length - 1];
+
+        // Single-device mode publishes states without a device-id prefix, so the
+        // relative id IS the device sub-path and every change routes to the one
+        // context. Multi-device mode prefixes each state with the device id.
+        const singleDeviceMode = this.config.singleDeviceMode;
+        const ctx = singleDeviceMode
+            ? this.deviceContexts.values().next().value
+            : this.deviceContexts.get(parts[0]);
+        if (!ctx) return;
+        const subPath = singleDeviceMode ? relativeId : parts.slice(1).join('.');
+
         if (stateName === 'enabled' && subPath === 'status.enabled') {
             ctx.enabled = state.val;
-            const displayName = ctx.vacuum && ctx.vacuum.nick ? `${deviceId} (${ctx.vacuum.nick})` : deviceId;
+            const displayName = ctx.vacuum && ctx.vacuum.nick ? `${ctx.deviceId} (${ctx.vacuum.nick})` : ctx.deviceId;
             if (state.val) {
                 this.log.info(`Device ${displayName}: control and updates enabled`);
                 if (ctx.connected) {
@@ -375,7 +354,9 @@ class EcovacsDeebot extends utils.Adapter {
         ctx._stateChangePromise = (ctx._stateChangePromise || Promise.resolve()).then(() =>
             adapterCommands.handleStateChange(this, ctx, subPath, state)
         ).catch(e => this.log.error(`Error handling state change for id '${id}' with value '${state.val}': '${e}'`));
-    } reconnect() {
+    }
+
+    reconnect() {
         if (this._startupTime && (Date.now() - this._startupTime < C.STARTUP_GRACE_PERIOD_MS)) {
             this.log.debug('Reconnect skipped - startup grace period active');
             return;
