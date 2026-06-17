@@ -46,5 +46,10 @@
   "enableKeepLatest": "Abilita (mantieni solo il più recente)",
   "feature.consumable.airFreshener": "Crea stato per il componente di durata del deodorante per ambienti",
   "feature.cleaninglog.downloadLastCleaningMapImage": "Download automatico dell ultima immagine di pulizia",
-  "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": "Ore di pulizia fino all attivazione del promemoria sacchetto polvere"
+  "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": "Ore di pulizia fino all attivazione del promemoria sacchetto polvere",
+  "devices": "Dispositivi",
+  "deviceId": "ID dispositivo (did)",
+  "perDeviceInfo": "Configure features individually for each device. Add one entry per device and pick the device from the list. Options left at \"pre-selection\" use the automatic default for that model.",
+  "deviceName": "Nome (per la visualizzazione)",
+  "deviceIdHelp": "Filled in automatically from the devices discovered on your account."
 }

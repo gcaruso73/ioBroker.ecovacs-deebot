@@ -46,5 +46,10 @@
   "enableKeepLatest": "Ativar (manter apenas o mais recente)",
   "feature.consumable.airFreshener": "Criar estado para o componente de vida útil do purificador de ar",
   "feature.cleaninglog.downloadLastCleaningMapImage": "Download automático da última imagem de limpeza",
-  "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": "Horas de limpeza até definir o lembrete do saco de pó"
+  "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": "Horas de limpeza até definir o lembrete do saco de pó",
+  "devices": "Dispositivos",
+  "deviceId": "ID do dispositivo (did)",
+  "perDeviceInfo": "Configure features individually for each device. Add one entry per device and pick the device from the list. Options left at \"pre-selection\" use the automatic default for that model.",
+  "deviceName": "Nome (para exibição)",
+  "deviceIdHelp": "Filled in automatically from the devices discovered on your account."
 }

@@ -250,6 +250,28 @@
           "md": 6,
           "lg": 6
         },
+        "languageForSpotAreaNames": {
+          "type": "select",
+          "label": "languageForSpotAreaNames",
+          "default": "",
+          "options": [
+            {
+              "label": "pre-selection",
+              "value": ""
+            },
+            {
+              "label": "english",
+              "value": "en"
+            },
+            {
+              "label": "german",
+              "value": "de"
+            }
+          ],
+          "sm": 12,
+          "md": 6,
+          "lg": 6
+        },
         "_singleDeviceModeSection": {
           "newLine": true,
           "type": "staticText",
@@ -300,512 +322,569 @@
         }
       }
     },
-    "extendedFunctions": {
+    "devices": {
       "type": "panel",
-      "label": "extendedFunctions",
+      "label": "devices",
       "items": {
-        "feature.info.dustbox": {
-          "type": "select",
-          "label": "feature.info.dustbox",
-          "default": "",
-          "options": [
-            {
-              "label": "pre-selection",
-              "value": ""
-            },
-            {
-              "label": "enable",
-              "value": "1"
-            },
-            {
-              "label": "disable",
-              "value": "0"
-            }
-          ],
+        "_perDeviceInfo": {
+          "type": "staticText",
+          "label": "perDeviceInfo",
           "sm": 12,
-          "md": 6,
-          "lg": 6
+          "md": 12,
+          "lg": 12
         },
-        "feature.control.autoBoostSuction": {
-          "type": "select",
-          "label": "feature.control.autoBoostSuction",
-          "default": "",
-          "options": [
-            {
-              "label": "pre-selection",
-              "value": ""
-            },
-            {
-              "label": "enable",
-              "value": "1"
-            },
-            {
-              "label": "disable",
-              "value": "0"
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "feature.map.mapImage": {
-          "type": "select",
-          "label": "feature.map.mapImage",
-          "default": "",
-          "options": [
-            {
-              "label": "pre-selection",
-              "value": ""
-            },
-            {
-              "label": "enable",
-              "value": "1"
-            },
-            {
-              "label": "disable",
-              "value": "0"
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "feature.map.virtualBoundariesRead": {
-          "type": "select",
-          "label": "feature.map.virtualBoundariesRead",
-          "default": "",
-          "options": [
-            {
-              "label": "pre-selection",
-              "value": ""
-            },
-            {
-              "label": "enable",
-              "value": "1"
-            },
-            {
-              "label": "disable",
-              "value": "0"
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "feature.control.spotAreaKeepModifiedNames": {
-          "type": "select",
-          "label": "feature.control.spotAreaKeepModifiedNames",
-          "default": "",
-          "options": [
-            {
-              "label": "pre-selection",
-              "value": ""
-            },
-            {
-              "label": "enable",
-              "value": "1"
-            },
-            {
-              "label": "disable",
-              "value": "0"
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "languageForSpotAreaNames": {
-          "type": "select",
-          "label": "languageForSpotAreaNames",
-          "default": "",
-          "options": [
-            {
-              "label": "pre-selection",
-              "value": ""
-            },
-            {
-              "label": "english",
-              "value": "en"
-            },
-            {
-              "label": "german",
-              "value": "de"
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "feature.control.spotAreaSync": {
-          "type": "select",
-          "label": "feature.control.spotAreaSync",
-          "default": "doNotSynchronize",
-          "options": [
-            {
-              "label": "doNotSynchronize",
-              "value": "doNotSynchronize"
-            },
-            {
-              "label": "fullSynchronization",
-              "value": "fullSynchronization"
-            },
-            {
-              "label": "onlyCreate",
-              "value": "onlyCreate"
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "feature.control.autoEmptyStation": {
-          "type": "select",
-          "label": "feature.control.autoEmptyStation",
-          "default": "",
-          "options": [
-            {
-              "label": "pre-selection",
-              "value": ""
-            },
-            {
-              "label": "enable",
-              "value": "1"
-            },
-            {
-              "label": "disable",
-              "value": "0"
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": {
-          "type": "select",
-          "label": "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet",
-          "default": 0,
-          "options": [
-            {
-              "label": "0 (disabled)",
-              "value": 0
-            },
-            {
-              "label": "1",
-              "value": 1
-            },
-            {
-              "label": "2",
-              "value": 2
-            },
-            {
-              "label": "3",
-              "value": 3
-            },
-            {
-              "label": "4",
-              "value": 4
-            },
-            {
-              "label": "5",
-              "value": 5
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        }
-      }
-    },
-    "experimental": {
-      "type": "panel",
-      "label": "experimental",
-      "items": {
         "_featuresWarning": {
+          "newLine": true,
           "type": "staticText",
           "label": "featuresWarning",
           "sm": 12,
           "md": 12,
           "lg": 12
         },
-        "feature.map.spotAreas.cleanSpeed": {
-          "type": "select",
-          "label": "feature.map.spotAreas.cleanSpeed",
-          "default": "",
-          "options": [
+        "devices": {
+          "newLine": true,
+          "type": "accordion",
+          "label": "devices",
+          "titleAttr": "name",
+          "noDelete": true,
+          "items": [
             {
-              "label": "pre-selection",
-              "value": ""
+              "type": "text",
+              "attr": "name",
+              "label": "deviceName",
+              "title": "deviceName",
+              "sm": 12,
+              "md": 6,
+              "lg": 6
             },
             {
-              "label": "enable",
-              "value": "1"
+              "type": "text",
+              "attr": "deviceId",
+              "label": "deviceId",
+              "title": "deviceId",
+              "help": "deviceIdHelp",
+              "readOnly": true,
+              "sm": 12,
+              "md": 6,
+              "lg": 6
             },
             {
-              "label": "disable",
-              "value": "0"
+              "type": "select",
+              "attr": "infoDustbox",
+              "label": "feature.info.dustbox",
+              "default": "",
+              "options": [
+                {
+                  "label": "pre-selection",
+                  "value": ""
+                },
+                {
+                  "label": "enable",
+                  "value": "1"
+                },
+                {
+                  "label": "disable",
+                  "value": "0"
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.info.dustbox"
+            },
+            {
+              "type": "select",
+              "attr": "controlAutoBoostSuction",
+              "label": "feature.control.autoBoostSuction",
+              "default": "",
+              "options": [
+                {
+                  "label": "pre-selection",
+                  "value": ""
+                },
+                {
+                  "label": "enable",
+                  "value": "1"
+                },
+                {
+                  "label": "disable",
+                  "value": "0"
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.control.autoBoostSuction"
+            },
+            {
+              "type": "select",
+              "attr": "mapMapImage",
+              "label": "feature.map.mapImage",
+              "default": "",
+              "options": [
+                {
+                  "label": "pre-selection",
+                  "value": ""
+                },
+                {
+                  "label": "enable",
+                  "value": "1"
+                },
+                {
+                  "label": "disable",
+                  "value": "0"
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.map.mapImage"
+            },
+            {
+              "type": "select",
+              "attr": "mapVirtualBoundariesRead",
+              "label": "feature.map.virtualBoundariesRead",
+              "default": "",
+              "options": [
+                {
+                  "label": "pre-selection",
+                  "value": ""
+                },
+                {
+                  "label": "enable",
+                  "value": "1"
+                },
+                {
+                  "label": "disable",
+                  "value": "0"
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.map.virtualBoundariesRead"
+            },
+            {
+              "type": "select",
+              "attr": "controlSpotAreaKeepModifiedNames",
+              "label": "feature.control.spotAreaKeepModifiedNames",
+              "default": "",
+              "options": [
+                {
+                  "label": "pre-selection",
+                  "value": ""
+                },
+                {
+                  "label": "enable",
+                  "value": "1"
+                },
+                {
+                  "label": "disable",
+                  "value": "0"
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.control.spotAreaKeepModifiedNames"
+            },
+            {
+              "type": "select",
+              "attr": "controlSpotAreaSync",
+              "label": "feature.control.spotAreaSync",
+              "default": "doNotSynchronize",
+              "options": [
+                {
+                  "label": "doNotSynchronize",
+                  "value": "doNotSynchronize"
+                },
+                {
+                  "label": "fullSynchronization",
+                  "value": "fullSynchronization"
+                },
+                {
+                  "label": "onlyCreate",
+                  "value": "onlyCreate"
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.control.spotAreaSync"
+            },
+            {
+              "type": "select",
+              "attr": "controlAutoEmptyStation",
+              "label": "feature.control.autoEmptyStation",
+              "default": "",
+              "options": [
+                {
+                  "label": "pre-selection",
+                  "value": ""
+                },
+                {
+                  "label": "enable",
+                  "value": "1"
+                },
+                {
+                  "label": "disable",
+                  "value": "0"
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.control.autoEmptyStation"
+            },
+            {
+              "type": "select",
+              "attr": "infoHoursUntilDustBagEmptyReminder",
+              "label": "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet",
+              "default": 0,
+              "options": [
+                {
+                  "label": "0 (disabled)",
+                  "value": 0
+                },
+                {
+                  "label": "1",
+                  "value": 1
+                },
+                {
+                  "label": "2",
+                  "value": 2
+                },
+                {
+                  "label": "3",
+                  "value": 3
+                },
+                {
+                  "label": "4",
+                  "value": 4
+                },
+                {
+                  "label": "5",
+                  "value": 5
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet"
+            },
+            {
+              "type": "header",
+              "text": "experimental",
+              "size": 5,
+              "sm": 12,
+              "md": 12,
+              "lg": 12
+            },
+            {
+              "type": "select",
+              "attr": "mapSpotAreasCleanSpeed",
+              "label": "feature.map.spotAreas.cleanSpeed",
+              "default": "",
+              "options": [
+                {
+                  "label": "pre-selection",
+                  "value": ""
+                },
+                {
+                  "label": "enable",
+                  "value": "1"
+                },
+                {
+                  "label": "disable",
+                  "value": "0"
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.map.spotAreas.cleanSpeed"
+            },
+            {
+              "type": "select",
+              "attr": "mapSpotAreasWaterLevel",
+              "label": "feature.map.spotAreas.waterLevel",
+              "default": "",
+              "options": [
+                {
+                  "label": "pre-selection",
+                  "value": ""
+                },
+                {
+                  "label": "enable",
+                  "value": "1"
+                },
+                {
+                  "label": "disable",
+                  "value": "0"
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.map.spotAreas.waterLevel"
+            },
+            {
+              "type": "select",
+              "attr": "mapVirtualBoundariesWrite",
+              "label": "feature.map.virtualBoundariesWrite",
+              "default": "",
+              "options": [
+                {
+                  "label": "pre-selection",
+                  "value": ""
+                },
+                {
+                  "label": "enable",
+                  "value": "1"
+                },
+                {
+                  "label": "disable",
+                  "value": "0"
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.map.virtualBoundariesWrite"
+            },
+            {
+              "type": "select",
+              "attr": "controlExperimental",
+              "label": "feature.control.experimental",
+              "default": "",
+              "options": [
+                {
+                  "label": "pre-selection",
+                  "value": ""
+                },
+                {
+                  "label": "enable",
+                  "value": "1"
+                },
+                {
+                  "label": "disable",
+                  "value": "0"
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.control.experimental"
+            },
+            {
+              "type": "select",
+              "attr": "controlV2commands",
+              "label": "feature.control.v2commands",
+              "default": "",
+              "options": [
+                {
+                  "label": "pre-selection",
+                  "value": ""
+                },
+                {
+                  "label": "enable",
+                  "value": "1"
+                },
+                {
+                  "label": "disable",
+                  "value": "0"
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.control.v2commands"
+            },
+            {
+              "type": "select",
+              "attr": "controlNativeGoToPosition",
+              "label": "feature.control.nativeGoToPosition",
+              "default": "",
+              "options": [
+                {
+                  "label": "pre-selection",
+                  "value": ""
+                },
+                {
+                  "label": "enable",
+                  "value": "1"
+                },
+                {
+                  "label": "disable",
+                  "value": "0"
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.control.nativeGoToPosition"
+            },
+            {
+              "type": "select",
+              "attr": "pauseBeforeDockingAreasize",
+              "label": "feature.pauseBeforeDockingChargingStation.areasize",
+              "default": 500,
+              "options": [
+                {
+                  "label": "250 x 250",
+                  "value": 250
+                },
+                {
+                  "label": "500 x 500",
+                  "value": 500
+                },
+                {
+                  "label": "750 x 750",
+                  "value": 750
+                },
+                {
+                  "label": "1000 x 1000",
+                  "value": 1000
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.pauseBeforeDockingChargingStation.areasize"
+            },
+            {
+              "type": "select",
+              "attr": "pauseBeforeDockingPauseOrStop",
+              "label": "feature.pauseBeforeDockingChargingStation.pauseOrStop",
+              "default": "pause",
+              "options": [
+                {
+                  "label": "pause",
+                  "value": "pause"
+                },
+                {
+                  "label": "stop",
+                  "value": "stop"
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.pauseBeforeDockingChargingStation.pauseOrStop"
+            },
+            {
+              "type": "select",
+              "attr": "mapSpotAreasLastTimePresenceThreshold",
+              "label": "feature.map.spotAreas.lastTimePresence.threshold",
+              "default": 20,
+              "options": [
+                {
+                  "label": "10",
+                  "value": 10
+                },
+                {
+                  "label": "20",
+                  "value": 20
+                },
+                {
+                  "label": "30",
+                  "value": 30
+                },
+                {
+                  "label": "60",
+                  "value": 60
+                },
+                {
+                  "label": "120",
+                  "value": 120
+                },
+                {
+                  "label": "180",
+                  "value": 180
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.map.spotAreas.lastTimePresence.threshold"
+            },
+            {
+              "type": "select",
+              "attr": "cleaninglogDownloadLastCleaningMapImage",
+              "label": "feature.cleaninglog.downloadLastCleaningMapImage",
+              "default": "",
+              "options": [
+                {
+                  "label": "pre-selection",
+                  "value": ""
+                },
+                {
+                  "label": "enableKeepAll",
+                  "value": "1"
+                },
+                {
+                  "label": "enableKeepLatest",
+                  "value": "2"
+                },
+                {
+                  "label": "disable",
+                  "value": "0"
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.cleaninglog.downloadLastCleaningMapImage"
+            },
+            {
+              "type": "select",
+              "attr": "controlMove",
+              "label": "feature.control.move",
+              "default": "",
+              "options": [
+                {
+                  "label": "pre-selection",
+                  "value": ""
+                },
+                {
+                  "label": "enable",
+                  "value": "1"
+                },
+                {
+                  "label": "disable",
+                  "value": "0"
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.control.move"
+            },
+            {
+              "type": "select",
+              "attr": "consumableAirFreshener",
+              "label": "feature.consumable.airFreshener",
+              "default": "",
+              "options": [
+                {
+                  "label": "pre-selection",
+                  "value": ""
+                },
+                {
+                  "label": "enable",
+                  "value": "1"
+                },
+                {
+                  "label": "disable",
+                  "value": "0"
+                }
+              ],
+              "sm": 12,
+              "md": 6,
+              "lg": 6,
+              "title": "feature.consumable.airFreshener"
             }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "feature.map.spotAreas.waterLevel": {
-          "type": "select",
-          "label": "feature.map.spotAreas.waterLevel",
-          "default": "",
-          "options": [
-            {
-              "label": "pre-selection",
-              "value": ""
-            },
-            {
-              "label": "enable",
-              "value": "1"
-            },
-            {
-              "label": "disable",
-              "value": "0"
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "feature.map.virtualBoundariesWrite": {
-          "type": "select",
-          "label": "feature.map.virtualBoundariesWrite",
-          "default": "",
-          "options": [
-            {
-              "label": "pre-selection",
-              "value": ""
-            },
-            {
-              "label": "enable",
-              "value": "1"
-            },
-            {
-              "label": "disable",
-              "value": "0"
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "feature.control.experimental": {
-          "type": "select",
-          "label": "feature.control.experimental",
-          "default": "",
-          "options": [
-            {
-              "label": "pre-selection",
-              "value": ""
-            },
-            {
-              "label": "enable",
-              "value": "1"
-            },
-            {
-              "label": "disable",
-              "value": "0"
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "feature.control.v2commands": {
-          "type": "select",
-          "label": "feature.control.v2commands",
-          "default": "",
-          "options": [
-            {
-              "label": "pre-selection",
-              "value": ""
-            },
-            {
-              "label": "enable",
-              "value": "1"
-            },
-            {
-              "label": "disable",
-              "value": "0"
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "feature.control.nativeGoToPosition": {
-          "type": "select",
-          "label": "feature.control.nativeGoToPosition",
-          "default": "",
-          "options": [
-            {
-              "label": "pre-selection",
-              "value": ""
-            },
-            {
-              "label": "enable",
-              "value": "1"
-            },
-            {
-              "label": "disable",
-              "value": "0"
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "feature.pauseBeforeDockingChargingStation.areasize": {
-          "type": "select",
-          "label": "feature.pauseBeforeDockingChargingStation.areasize",
-          "default": 500,
-          "options": [
-            {
-              "label": "250 x 250",
-              "value": 250
-            },
-            {
-              "label": "500 x 500",
-              "value": 500
-            },
-            {
-              "label": "750 x 750",
-              "value": 750
-            },
-            {
-              "label": "1000 x 1000",
-              "value": 1000
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "feature.pauseBeforeDockingChargingStation.pauseOrStop": {
-          "type": "select",
-          "label": "feature.pauseBeforeDockingChargingStation.pauseOrStop",
-          "default": "pause",
-          "options": [
-            {
-              "label": "pause",
-              "value": "pause"
-            },
-            {
-              "label": "stop",
-              "value": "stop"
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "feature.map.spotAreas.lastTimePresence.threshold": {
-          "type": "select",
-          "label": "feature.map.spotAreas.lastTimePresence.threshold",
-          "default": 20,
-          "options": [
-            {
-              "label": "10",
-              "value": 10
-            },
-            {
-              "label": "20",
-              "value": 20
-            },
-            {
-              "label": "30",
-              "value": 30
-            },
-            {
-              "label": "60",
-              "value": 60
-            },
-            {
-              "label": "120",
-              "value": 120
-            },
-            {
-              "label": "180",
-              "value": 180
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "feature.cleaninglog.downloadLastCleaningMapImage": {
-          "type": "select",
-          "label": "feature.cleaninglog.downloadLastCleaningMapImage",
-          "default": "",
-          "options": [
-            {
-              "label": "pre-selection",
-              "value": ""
-            },
-            {
-              "label": "enableKeepAll",
-              "value": "1"
-            },
-            {
-              "label": "enableKeepLatest",
-              "value": "2"
-            },
-            {
-              "label": "disable",
-              "value": "0"
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "feature.control.move": {
-          "type": "select",
-          "label": "feature.control.move",
-          "default": "",
-          "options": [
-            {
-              "label": "pre-selection",
-              "value": ""
-            },
-            {
-              "label": "enable",
-              "value": "1"
-            },
-            {
-              "label": "disable",
-              "value": "0"
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
-        },
-        "feature.consumable.airFreshener": {
-          "type": "select",
-          "label": "feature.consumable.airFreshener",
-          "default": "",
-          "options": [
-            {
-              "label": "pre-selection",
-              "value": ""
-            },
-            {
-              "label": "enable",
-              "value": "1"
-            },
-            {
-              "label": "disable",
-              "value": "0"
-            }
-          ],
-          "sm": 12,
-          "md": 6,
-          "lg": 6
+          ]
         }
       }
     }

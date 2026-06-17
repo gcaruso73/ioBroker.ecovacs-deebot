@@ -46,5 +46,10 @@
   "enableKeepLatest": "启用（仅保留最新）",
   "feature.consumable.airFreshener": "为空气新鲜剂寿命组件创建状态",
   "feature.cleaninglog.downloadLastCleaningMapImage": "自动下载最后一次清洁图像",
-  "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": "清洁时长（小时）直到设置集尘袋提醒"
+  "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": "清洁时长（小时）直到设置集尘袋提醒",
+  "devices": "设备",
+  "deviceId": "设备 ID (did)",
+  "perDeviceInfo": "Configure features individually for each device. Add one entry per device and pick the device from the list. Options left at \"pre-selection\" use the automatic default for that model.",
+  "deviceName": "名称（用于显示）",
+  "deviceIdHelp": "Filled in automatically from the devices discovered on your account."
 }

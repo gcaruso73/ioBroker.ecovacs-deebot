@@ -46,5 +46,10 @@
   "enableKeepLatest": "Включить (только последние)",
   "feature.consumable.airFreshener": "Создать состояние для компонента освежителя воздуха",
   "feature.cleaninglog.downloadLastCleaningMapImage": "Автоматическая загрузка последнего изображения уборки",
-  "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": "Часы уборки до напоминания о замене мешка для пыли"
+  "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": "Часы уборки до напоминания о замене мешка для пыли",
+  "devices": "Устройства",
+  "deviceId": "ID устройства (did)",
+  "perDeviceInfo": "Configure features individually for each device. Add one entry per device and pick the device from the list. Options left at \"pre-selection\" use the automatic default for that model.",
+  "deviceName": "Имя (для отображения)",
+  "deviceIdHelp": "Filled in automatically from the devices discovered on your account."
 }

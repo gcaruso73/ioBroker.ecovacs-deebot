@@ -62,7 +62,8 @@
     "test": "npm run test:js && npm run test:package",
     "test:coverage": "nyc npm test",
     "lint": "eslint",
-    "translate": "translate-adapter"
+    "translate": "translate-adapter",
+    "docker:deploy": "docker compose exec -T iobroker bash /opt/iobroker.ecovacs-deebot/.docker/redeploy.sh"
   },
   "bugs": {
     "url": "https://github.com/mrbungle64/ioBroker.ecovacs-deebot/issues"

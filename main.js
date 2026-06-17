@@ -27,6 +27,39 @@ const mapObjects = require('./lib/mapObjects');
 const eventHandlers = require('./lib/eventHandlers');
 const mapHelper = require('./lib/mapHelper');
 
+/**
+ * Maps the dotted feature.* config keys used throughout the adapter to the
+ * (dot-free) field names of the per-device "devices" accordion in
+ * admin/jsonConfig.json. Dot-free attr names are required because the admin
+ * UI unflattens dotted keys into nested objects (see migrateNativeConfig).
+ *
+ * The virtualBoundaries entries intentionally map to the keys that
+ * Model.getConfigOverride() actually reads ('feature.map.virtualBoundaries'
+ * and '...write'), not the legacy '...Read'/'...Write' native names.
+ */
+const PER_DEVICE_FEATURE_KEYS = {
+    'feature.info.dustbox': 'infoDustbox',
+    'feature.control.autoBoostSuction': 'controlAutoBoostSuction',
+    'feature.map.mapImage': 'mapMapImage',
+    'feature.map.virtualBoundaries': 'mapVirtualBoundariesRead',
+    'feature.map.virtualBoundaries.write': 'mapVirtualBoundariesWrite',
+    'feature.control.spotAreaKeepModifiedNames': 'controlSpotAreaKeepModifiedNames',
+    'feature.control.spotAreaSync': 'controlSpotAreaSync',
+    'feature.control.autoEmptyStation': 'controlAutoEmptyStation',
+    'feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet': 'infoHoursUntilDustBagEmptyReminder',
+    'feature.map.spotAreas.cleanSpeed': 'mapSpotAreasCleanSpeed',
+    'feature.map.spotAreas.waterLevel': 'mapSpotAreasWaterLevel',
+    'feature.control.experimental': 'controlExperimental',
+    'feature.control.v2commands': 'controlV2commands',
+    'feature.control.nativeGoToPosition': 'controlNativeGoToPosition',
+    'feature.pauseBeforeDockingChargingStation.areasize': 'pauseBeforeDockingAreasize',
+    'feature.pauseBeforeDockingChargingStation.pauseOrStop': 'pauseBeforeDockingPauseOrStop',
+    'feature.map.spotAreas.lastTimePresence.threshold': 'mapSpotAreasLastTimePresenceThreshold',
+    'feature.cleaninglog.downloadLastCleaningMapImage': 'cleaninglogDownloadLastCleaningMapImage',
+    'feature.control.move': 'controlMove',
+    'feature.consumable.airFreshener': 'consumableAirFreshener'
+};
+
 class EcovacsDeebot extends utils.Adapter {
     constructor(options) {
         super(
@@ -498,6 +531,11 @@ class EcovacsDeebot extends utils.Adapter {
             }))), true);
             this.setStateConditional('info.deviceCount', numberOfDevices, true);
 
+            // Auto-populate the per-device configuration (Devices tab) with the
+            // devices discovered on the account, so the user only has to toggle
+            // features instead of entering device IDs by hand.
+            await this.ensureDeviceConfigEntries(devices);
+
             let devicesToProcess = devices;
             let useSkipPrefix = false;
             const singleDeviceMode = this.config.singleDeviceMode;
@@ -550,7 +588,7 @@ class EcovacsDeebot extends utils.Adapter {
                     throw e;
                 }
                 const ctx = new DeviceContext(this, deviceId, vacbot, vacuum, this.requestThrottle, useSkipPrefix);
-                ctx.vacuum = vacuum; ctx.api = api; ctx.model = new Model(vacbot, this.config); ctx.device = new Device(ctx);
+                ctx.vacuum = vacuum; ctx.api = api; ctx.model = new Model(vacbot, this.buildDeviceConfig(deviceId)); ctx.device = new Device(ctx);
                 this.deviceContexts.set(deviceId, ctx);
                 try {
                     const enabledState = await this.getStateAsync(ctx.statePath('status.enabled'));
@@ -1632,11 +1670,118 @@ class EcovacsDeebot extends utils.Adapter {
         }
     }
 
-    getConfigValue(cv) {
+    /**
+     * Returns the per-device config entry from the "devices" accordion for a
+     * given deviceId, or undefined if none is configured.
+     * @param {string} deviceId
+     * @returns {Object|undefined}
+     */
+    getDeviceConfigEntry(deviceId) {
+        if (!deviceId || !Array.isArray(this.config.devices)) {
+            return undefined;
+        }
+        // The runtime deviceId is the sanitized did (vacuum.did with non
+        // [a-zA-Z0-9_] chars replaced by '_'), which is also the device's
+        // channel name. Sanitize the configured value the same way so a pasted
+        // raw did matches regardless of special characters.
+        const sanitize = (s) => String(s).replace(/[^a-zA-Z0-9_]/g, '_');
+        return this.config.devices.find((d) => d && sanitize(d.deviceId) === deviceId);
+    }
+
+    /**
+     * Ensures the per-device configuration ("devices" accordion in the admin)
+     * has an entry for every device discovered on the account. Existing entries
+     * (including the user's feature overrides and custom names) are never
+     * modified or removed; only missing devices are appended.
+     *
+     * Writing the instance config object causes js-controller to restart the
+     * adapter, so this only writes when there is actually something new to add
+     * (typically only on the first run or when a new device appears), avoiding
+     * restart loops.
+     * @param {Object[]} devices - discovered devices from the Ecovacs API
+     * @returns {Promise<boolean>} true if new entries were added (config written)
+     */
+    async ensureDeviceConfigEntries(devices) {
+        try {
+            const objId = 'system.adapter.' + this.namespace;
+            const obj = await this.getForeignObjectAsync(objId);
+            if (!obj || !obj.native) {
+                return false;
+            }
+            const existing = Array.isArray(obj.native.devices) ? obj.native.devices : [];
+            const sanitize = (s) => String(s).replace(/[^a-zA-Z0-9_]/g, '_');
+            const known = new Set(existing.map((d) => d && sanitize(d.deviceId)));
+
+            const additions = [];
+            for (const device of devices) {
+                const did = device.did || device.name;
+                if (!did || known.has(sanitize(did))) {
+                    continue;
+                }
+                known.add(sanitize(did));
+                additions.push({
+                    name: device.nick || device.deviceName || device.name || did,
+                    deviceId: did
+                });
+            }
+
+            if (additions.length === 0) {
+                return false;
+            }
+
+            obj.native.devices = existing.concat(additions);
+            await this.setForeignObjectAsync(objId, obj);
+            this.log.info(`Added ${additions.length} newly discovered device(s) to the configuration. The adapter will restart to apply.`);
+            return true;
+        } catch (e) {
+            this.log.warn('Could not auto-populate the device configuration: ' + e.message);
+            return false;
+        }
+    }
+
+    /**
+     * Resolves a feature.* config value. When a deviceId is supplied and the
+     * device has a per-device override configured, that override wins; otherwise
+     * the (legacy) global value is used as a fallback for backward compatibility.
+     * Non-feature keys (e.g. authDomain) only ever resolve globally.
+     * @param {string} cv
+     * @param {string} [deviceId]
+     */
+    getConfigValue(cv, deviceId) {
+        if (deviceId && Object.hasOwn(PER_DEVICE_FEATURE_KEYS, cv)) {
+            const entry = this.getDeviceConfigEntry(deviceId);
+            if (entry) {
+                const value = entry[PER_DEVICE_FEATURE_KEYS[cv]];
+                if (value) {
+                    return value;
+                }
+            }
+        }
         if (this.config[cv]) {
             return this.config[cv];
         }
         return '';
+    }
+
+    /**
+     * Builds the effective adapter config for a single device's Model: the
+     * global config overlaid with that device's configured feature.* overrides.
+     * Used so Model.getConfigOverride() resolves per-device values.
+     * @param {string} deviceId
+     * @returns {Object}
+     */
+    buildDeviceConfig(deviceId) {
+        const merged = { ...this.config };
+        const entry = this.getDeviceConfigEntry(deviceId);
+        if (entry) {
+            for (const [featureKey, attr] of Object.entries(PER_DEVICE_FEATURE_KEYS)) {
+                const value = entry[attr];
+                if (value !== undefined && value !== null && value !== '') {
+                    merged[featureKey] = value;
+                }
+            }
+        }
+        return merged;
     }
 
     isAuthError(message) {
@@ -1753,24 +1898,24 @@ class EcovacsDeebot extends utils.Adapter {
         return isPartOfCleaningProcess;
     }
 
-    getPauseBeforeDockingChargingStationAreaSize() {
-        if (this.getConfigValue('feature.pauseBeforeDockingChargingStation.areasize')) {
-            return Number(this.getConfigValue('feature.pauseBeforeDockingChargingStation.areasize'));
+    getPauseBeforeDockingChargingStationAreaSize(deviceId) {
+        if (this.getConfigValue('feature.pauseBeforeDockingChargingStation.areasize', deviceId)) {
+            return Number(this.getConfigValue('feature.pauseBeforeDockingChargingStation.areasize', deviceId));
         }
         return 500;
     }
 
-    getPauseBeforeDockingSendPauseOrStop() {
+    getPauseBeforeDockingSendPauseOrStop(deviceId) {
         let sendPauseOrStop = 'pause';
-        if (this.getConfigValue('feature.pauseBeforeDockingChargingStation.pauseOrStop')) {
-            sendPauseOrStop = this.getConfigValue('feature.pauseBeforeDockingChargingStation.pauseOrStop');
+        if (this.getConfigValue('feature.pauseBeforeDockingChargingStation.pauseOrStop', deviceId)) {
+            sendPauseOrStop = this.getConfigValue('feature.pauseBeforeDockingChargingStation.pauseOrStop', deviceId);
         }
         return sendPauseOrStop;
     }
 
-    getHoursUntilDustBagEmptyReminderFlagIsSet() {
-        if (this.getConfigValue('feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet')) {
-            return Number(this.getConfigValue('feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet'));
+    getHoursUntilDustBagEmptyReminderFlagIsSet(deviceId) {
+        if (this.getConfigValue('feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet', deviceId)) {
+            return Number(this.getConfigValue('feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet', deviceId));
         }
         return 0;
     }
@@ -1987,10 +2132,10 @@ class EcovacsDeebot extends utils.Adapter {
         }
         const pauseBeforeDockingIfWaterboxInstalled = ctx.pauseBeforeDockingIfWaterboxInstalled && ctx.waterboxInstalled;
         if (ctx.getDevice().isReturning() && (ctx.pauseBeforeDockingChargingStation || pauseBeforeDockingIfWaterboxInstalled)) {
-            const areaSize = this.getPauseBeforeDockingChargingStationAreaSize();
+            const areaSize = this.getPauseBeforeDockingChargingStationAreaSize(ctx.deviceId);
             if (mapHelper.positionIsInRectangleForPosition(x, y, ctx.chargePosition, areaSize)) {
                 if (ctx.getDevice().isNotPaused() && ctx.getDevice().isNotStopped()) {
-                    ctx.commandQueue.run(this.getPauseBeforeDockingSendPauseOrStop());
+                    ctx.commandQueue.run(this.getPauseBeforeDockingSendPauseOrStop(ctx.deviceId));
                 }
                 ctx.adapterProxy.setStateConditional('control.extended.pauseBeforeDockingChargingStation', false, true);
                 ctx.pauseBeforeDockingChargingStation = false;
@@ -2011,7 +2156,7 @@ class EcovacsDeebot extends utils.Adapter {
 
     async handleDurationForLastTimePresence(ctx) {
         const duration = helper.getUnixTimestamp() - ctx.currentSpotAreaData.lastTimeEnteredTimestamp;
-        const lastTimePresenceThreshold = this.getConfigValue('feature.map.spotAreas.lastTimePresence.threshold') || 20;
+        const lastTimePresenceThreshold = this.getConfigValue('feature.map.spotAreas.lastTimePresence.threshold', ctx.deviceId) || 20;
         if (duration >= lastTimePresenceThreshold) {
             await mapObjects.createOrUpdateLastTimePresenceAndLastCleanedSpotArea(this, ctx, duration);
         }

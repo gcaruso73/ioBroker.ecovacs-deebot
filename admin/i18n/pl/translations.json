@@ -46,5 +46,10 @@
   "enableKeepLatest": "Włącz (zachowaj tylko najnowsze)",
   "feature.consumable.airFreshener": "Utwórz stan dla komponentu żywotności odświeżacza powietrza",
   "feature.cleaninglog.downloadLastCleaningMapImage": "Automatyczne pobieranie ostatniego obrazu czyszczenia",
-  "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": "Godziny czyszczenia do ustawienia flagi przypomnienia worka"
+  "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": "Godziny czyszczenia do ustawienia flagi przypomnienia worka",
+  "devices": "Urządzenia",
+  "deviceId": "ID urządzenia (did)",
+  "perDeviceInfo": "Configure features individually for each device. Add one entry per device and pick the device from the list. Options left at \"pre-selection\" use the automatic default for that model.",
+  "deviceName": "Nazwa (do wyświetlenia)",
+  "deviceIdHelp": "Filled in automatically from the devices discovered on your account."
 }

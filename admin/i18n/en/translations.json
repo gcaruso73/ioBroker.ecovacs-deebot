@@ -49,5 +49,10 @@
   "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": "Hours of cleaning time until dust bag reminder flag is set",
   "singleDeviceMode": "Single device mode (only connect one device)",
   "singleDeviceId": "Device",
-  "singleDeviceInfoText": "Enable this to connect only a single device. The device ID will be removed from the state tree (flat structure). Use the Login and Test Connection button first to discover your devices."
+  "singleDeviceInfoText": "Enable this to connect only a single device. The device ID will be removed from the state tree (flat structure). Use the Login and Test Connection button first to discover your devices.",
+  "devices": "Devices",
+  "deviceId": "Device ID (did)",
+  "perDeviceInfo": "Configure features individually for each device. Add one entry per device and pick the device from the list. Options left at \"pre-selection\" use the automatic default for that model.",
+  "deviceName": "Name (for display)",
+  "deviceIdHelp": "Filled in automatically from the devices discovered on your account."
 }

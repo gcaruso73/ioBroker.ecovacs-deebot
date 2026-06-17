@@ -47,7 +47,12 @@
   "feature.consumable.airFreshener": "Erstelle Datenpunkt für die Lufterfrischer Lebensdauer (\"consumable.airFreshener\")",
   "feature.cleaninglog.downloadLastCleaningMapImage": "Automatisches Herunterladen vom Image der letzten Reinigung",
   "feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet": "Reinigungszeit in Stunden, bis das Flag für die Staubbeutel-Erinnerung gesetzt wird",
-  "singleDeviceMode": "Einzelger�temodus (nur ein Ger�t verbinden)",
-  "singleDeviceId": "Ger�t",
-  "singleDeviceInfoText": "Aktivieren, um nur ein einzelnes Ger�t zu verbinden. Die Ger�te-ID wird aus dem Statusbaum entfernt (flache Struktur). Benutzen Sie zuerst den Anmelden & Verbindung testen Button, um Ihre Ger�te zu entdecken."
+  "singleDeviceMode": "Einzelger�temodus (nur ein Ger�t verbinden)",
+  "singleDeviceId": "Ger�t",
+  "singleDeviceInfoText": "Aktivieren, um nur ein einzelnes Ger�t zu verbinden. Die Ger�te-ID wird aus dem Statusbaum entfernt (flache Struktur). Benutzen Sie zuerst den Anmelden & Verbindung testen Button, um Ihre Ger�te zu entdecken.",
+  "devices": "Geräte",
+  "deviceId": "Geräte-ID (did)",
+  "perDeviceInfo": "Konfigurieren Sie Funktionen individuell für jedes Gerät. Fügen Sie pro Gerät einen Eintrag hinzu und wählen Sie das Gerät aus der Liste. Optionen mit \"Vorauswahl\" verwenden die automatische Voreinstellung des jeweiligen Modells.",
+  "deviceName": "Name (zur Anzeige)",
+  "deviceIdHelp": "Wird automatisch anhand der auf deinem Konto gefundenen Geräte ausgefüllt."
 }
