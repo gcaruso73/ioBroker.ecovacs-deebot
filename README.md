@@ -63,6 +63,7 @@ To support a new model, usually changes are needed in both parts:
 ### 2.0.x (alpha)
 - **Breaking Change: Multi-Device Architecture**
   - Manage all account devices in a single instance instead of running separate adapter instances
+  - Per-device feature configuration: the **Devices** tab is auto-populated from the devices on your account, so feature toggles can be set individually per device (see [DOCUMENTATION.md](DOCUMENTATION.md#configuration-admin-ui))
   - Automatic native config migration on startup (removes legacy dot-notation keys and the `deviceNumber` setting)
 - **Breaking Change: No new features for legacy devices**
   - Transition to a **Pure MQTT/JSON**

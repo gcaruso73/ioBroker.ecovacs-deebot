@@ -49,12 +49,31 @@ Version 2 manages **all devices on a single account in one adapter instance**. I
 
 ### Configuration (Admin UI)
 
+The settings are split into two tabs: **Account** (one set of values for the whole instance) and **Devices** (feature toggles configured individually per device).
+
+#### Account
+
 | Field | Description |
 | :--- | :--- |
 | E-Mail / Account ID | The account email used in the Ecovacs or Yeedi app |
 | Password | Account password (stored encrypted via `encryptedNative`) |
 | Country | Two-letter ISO country code (e.g. `de`, `us`) |
 | Auth domain | Leave empty for Ecovacs; use `yeedi.com` for Yeedi accounts |
+| Polling interval | How often device states are actively polled (seconds) |
+| Language for spot area labels | Language used for spot-area names, when the model supports labels |
+| Single device mode | Connect only one device and flatten its object tree (omit the device-id prefix) |
+| Device (single device mode) | Which device to connect when single device mode is enabled |
+
+#### Devices (per-device features)
+
+Version 2 manages every device on the account, so most feature toggles are configured **individually per device** on this tab.
+
+- **The list is auto-populated.** On each successful connection the adapter adds an entry for every discovered device (`ensureDeviceConfigEntries` in `main.js`), pre-filling a friendly **Name** and the read-only **Device ID**. You just expand an entry and set the features you want — no device IDs to look up or paste. The first time a new device is discovered the adapter writes the configuration and restarts once to apply it.
+- **Three-state toggles.** Each feature is either **pre-selection** (let the adapter auto-detect support from the model — the default), **enable**, or **disable**. Choice/numeric options (thresholds, area sizes, etc.) work the same way, with a sensible default.
+- **Standard and Experimental groups.** Experimental features are unlocked at your own risk; their behaviour and availability vary from model to model.
+- **Resolution order at runtime:** a per-device override (when set) wins; otherwise the model's automatic capability detection applies. A feature left at *pre-selection* always defers to auto-detection. For instances upgraded from older versions, any previously global feature value is still honoured as a fallback until a per-device value is set.
+
+> Entries are auto-managed: there is no manual *add*, and *delete* is disabled. An entry for a device that is later removed from the account simply lingers and is harmless.
 
 ### Docker / Container Deployment
 
