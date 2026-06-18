@@ -224,4 +224,80 @@ describe('main.js - ensureDeviceConfigEntries', () => {
         expect(changed).to.be.false;
         expect(instance.setForeignObjectAsync.called).to.be.false;
     });
+
+    describe('getConfigValue and buildDeviceConfig overrides', () => {
+        beforeEach(() => {
+            instance.config = {
+                devices: [
+                    {
+                        deviceId: 'aaa111',
+                        name: 'Living Room',
+                        infoHoursUntilDustBagEmptyReminder: 0, // 0 override
+                        controlAutoBoostSuction: '0', // "0" override
+                        mapMapImage: '1', // "1" override
+                        mapVirtualBoundariesRead: '' // pre-selection (should fall back)
+                    }
+                ],
+                'feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet': 3,
+                'feature.control.autoBoostSuction': '1',
+                'feature.map.mapImage': '0',
+                'feature.map.virtualBoundaries': '1',
+                'feature.control.experimental': '1' // no override configured
+            };
+        });
+
+        describe('getConfigValue', () => {
+            it('resolves global config when no deviceId is supplied', () => {
+                expect(instance.getConfigValue('feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet')).to.equal(3);
+                expect(instance.getConfigValue('feature.control.autoBoostSuction')).to.equal('1');
+            });
+
+            it('resolves global config when device has no override entry', () => {
+                expect(instance.getConfigValue('feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet', 'bbb222')).to.equal(3);
+            });
+
+            it('resolves global config when key is not in PER_DEVICE_FEATURE_KEYS', () => {
+                // authDomain is not in PER_DEVICE_FEATURE_KEYS, so it must always resolve globally
+                instance.config.authDomain = 'yeedi.com';
+                expect(instance.getConfigValue('authDomain', 'aaa111')).to.equal('yeedi.com');
+            });
+
+            it('resolves override when override is a truthy string ("1")', () => {
+                expect(instance.getConfigValue('feature.map.mapImage', 'aaa111')).to.equal('1');
+            });
+
+            it('resolves override when override is numeric 0 (disable)', () => {
+                expect(instance.getConfigValue('feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet', 'aaa111')).to.equal(0);
+            });
+
+            it('resolves override when override is a "0" string (disable)', () => {
+                expect(instance.getConfigValue('feature.control.autoBoostSuction', 'aaa111')).to.equal('0');
+            });
+
+            it('falls back to global value when override is an empty string (pre-selection)', () => {
+                expect(instance.getConfigValue('feature.map.virtualBoundaries', 'aaa111')).to.equal('1');
+            });
+
+            it('resolves global value when no override is configured for that feature', () => {
+                expect(instance.getConfigValue('feature.control.experimental', 'aaa111')).to.equal('1');
+            });
+        });
+
+        describe('buildDeviceConfig', () => {
+            it('returns config with overrides merged correctly', () => {
+                const merged = instance.buildDeviceConfig('aaa111');
+                expect(merged['feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet']).to.equal(0);
+                expect(merged['feature.control.autoBoostSuction']).to.equal('0');
+                expect(merged['feature.map.mapImage']).to.equal('1');
+                expect(merged['feature.map.virtualBoundaries']).to.equal('1'); // falls back to global
+                expect(merged['feature.control.experimental']).to.equal('1'); // global only
+            });
+
+            it('returns original config (copy) when device is not found', () => {
+                const merged = instance.buildDeviceConfig('bbb222');
+                expect(merged).to.deep.equal(instance.config);
+                expect(merged).to.not.equal(instance.config); // must be a copy
+            });
+        });
+    });
 });

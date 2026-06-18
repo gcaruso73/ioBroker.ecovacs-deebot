@@ -1752,7 +1752,7 @@ class EcovacsDeebot extends utils.Adapter {
             const entry = this.getDeviceConfigEntry(deviceId);
             if (entry) {
                 const value = entry[PER_DEVICE_FEATURE_KEYS[cv]];
-                if (value) {
+                if (value !== undefined && value !== null && value !== '') {
                     return value;
                 }
             }
