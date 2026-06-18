@@ -62,6 +62,7 @@
     "test": "npm run test:js && npm run test:package",
     "test:coverage": "nyc npm test",
     "lint": "eslint",
+    "version": "node scripts/sync-io-package-version.js && git add io-package.json",
     "translate": "translate-adapter",
     "docker:deploy": "docker compose exec -T iobroker bash /opt/iobroker.ecovacs-deebot/.docker/redeploy.sh"
   },
