@@ -281,6 +281,19 @@ describe('main.js - ensureDeviceConfigEntries', () => {
             it('resolves global value when no override is configured for that feature', () => {
                 expect(instance.getConfigValue('feature.control.experimental', 'aaa111')).to.equal('1');
             });
+
+            it('returns a falsy global value (numeric 0) instead of collapsing to ""', () => {
+                // No per-device override for this key, global is a meaningful 0.
+                instance.config['feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet'] = 0;
+                expect(instance.getConfigValue('feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet', 'bbb222')).to.equal(0);
+                // Also without a deviceId (pure global path).
+                expect(instance.getConfigValue('feature.info.extended.hoursUntilDustBagEmptyReminderFlagIsSet')).to.equal(0);
+            });
+
+            it('returns a falsy global value (boolean false) instead of collapsing to ""', () => {
+                instance.config['feature.control.autoBoostSuction'] = false;
+                expect(instance.getConfigValue('feature.control.autoBoostSuction', 'bbb222')).to.equal(false);
+            });
         });
 
         describe('buildDeviceConfig', () => {

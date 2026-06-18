@@ -1757,8 +1757,9 @@ class EcovacsDeebot extends utils.Adapter {
                 }
             }
         }
-        if (this.config[cv]) {
-            return this.config[cv];
+        const globalValue = this.config[cv];
+        if (globalValue !== undefined && globalValue !== null && globalValue !== '') {
+            return globalValue;
         }
         return '';
     }
