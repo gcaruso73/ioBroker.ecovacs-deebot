@@ -17,6 +17,9 @@ node_modules/
 # Environment files
 .env
 
+# npm config (may contain auth tokens)
+.npmrc
+
 # npm artifacts
 iobroker.*.tgz
 
