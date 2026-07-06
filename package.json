@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "@iobroker/adapter-core": "^3.3.2",
-    "ecovacs-deebot": "github:gcaruso73/ecovacs-deebot.js#eddddfca208c88830daadaf9247eccd7174d3ba4",
+    "ecovacs-deebot": "github:gcaruso73/ecovacs-deebot.js#b548157b2e44567cf269f28cf32465171d027854",
     "axios": "1.12.1",
     "node-machine-id": "1.1.12"
   },
