@@ -299,6 +299,11 @@ class EcovacsDeebot extends utils.Adapter {
                     });
 
                     this.vacbot.on('WaterLevel', (level) => {
+                        if ((level === undefined) || (level === null)) {
+                            // Some models (e.g. DEEBOT T80S OMNI with OZMO roller) do not report
+                            // a numeric water level; avoid spamming "value is undefined" warnings
+                            return;
+                        }
                         this.waterLevel = level;
                         adapterObjects.createControlWaterLevelIfNotExists(this, 0, 'control.waterLevel_standard', 'Water level if no other value is set').then(() => {
                             adapterObjects.createControlWaterLevelIfNotExists(this, this.waterLevel).then(() => {
