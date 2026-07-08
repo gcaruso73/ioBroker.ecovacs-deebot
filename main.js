@@ -868,6 +868,14 @@ class EcovacsDeebot extends utils.Adapter {
                         }
                     });
 
+                    // Re-apply the persisted live robot overlay switch to the
+                    // (re)created vacbot instance.
+                    this.getState('map.liveRobotOverlay', (err, st) => {
+                        if (!err && st && st.val) {
+                            this.vacbot.createMapImageOnPositionChange = true;
+                        }
+                    });
+
                     this.vacbot.on('CurrentCustomAreaValues', (values) => {
                         if (((this.cleanstatus === 'custom_area') && (values !== '')) || (this.cleanstatus !== 'custom_area')) {
                             this.setStateConditional('map.currentUsedCustomAreaValues', values, true);
