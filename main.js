@@ -869,10 +869,17 @@ class EcovacsDeebot extends utils.Adapter {
                     });
 
                     // Re-apply the persisted live robot overlay switch to the
-                    // (re)created vacbot instance.
+                    // (re)created vacbot instance, and repopulate the room cache
+                    // (a GetMapInfo_V2) so the overlay keeps working after a restart
+                    // without a manual loadMapImage.
                     this.getState('map.liveRobotOverlay', (err, st) => {
                         if (!err && st && st.val) {
                             this.vacbot.createMapImageOnPositionChange = true;
+                            setTimeout(() => {
+                                if (this.currentMapID && this.vacbot && this.vacbot.is950type_V2 && this.vacbot.is950type_V2()) {
+                                    this.vacbot.run('GetMapInfo_V2', this.currentMapID);
+                                }
+                            }, 20000);
                         }
                     });
 
