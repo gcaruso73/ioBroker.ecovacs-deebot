@@ -93,6 +93,7 @@ class EcovacsDeebot extends utils.Adapter {
 
     async onReady() {
         await adapterObjects.createInitialInfoObjects(this);
+        await this.createDeviceVerifyObjects();
 
         // Reset the connection indicator during startup
         this.setStateConditional('info.connection', false, true);
@@ -125,8 +126,72 @@ class EcovacsDeebot extends utils.Adapter {
         this.log.info('cleaned everything up...');
     }
 
+    async createDeviceVerifyObjects() {
+        // States to recover from Ecovacs error 1013 (device trust). Created early so
+        // they exist even when the login fails and the adapter is not connected.
+        await this.createChannelNotExists('control.extended.verifyDevice', 'Device verification (recovery for error 1013)');
+        await this.createObjectNotExists(
+            'control.extended.verifyDevice.sendCode',
+            'Send a one-time device verification code to the account email', 'boolean', 'button', true, false, '');
+        await this.createObjectNotExists(
+            'control.extended.verifyDevice.code',
+            'Enter the emailed code here to verify this device', 'string', 'text', true, '', '');
+        await this.createObjectNotExists(
+            'control.extended.verifyDevice.info',
+            'Device verification status', 'string', 'text', false, '', '');
+    }
+
+    _buildVerifyApi() {
+        const deviceId = EcoVacsAPI.getDeviceId(nodeMachineId.machineIdSync(), this.config.deviceNumber);
+        const continent = (ecovacsDeebot.countries)[this.config.countrycode.toUpperCase()].continent.toLowerCase();
+        const authDomain = this.getConfigValue('authDomain') || '';
+        return new EcoVacsAPI(deviceId, this.config.countrycode, continent, authDomain);
+    }
+
+    async runDeviceVerifySend() {
+        try {
+            if ((!this.config.email) || (!this.config.countrycode)) {
+                this.setStateConditional('control.extended.verifyDevice.info', 'Missing email/country in adapter config', true);
+                return;
+            }
+            this.setStateConditional('control.extended.verifyDevice.info', 'Sending verification code ...', true);
+            await this._buildVerifyApi().sendDeviceVerifyCode(this.config.email);
+            this.setStateConditional('control.extended.verifyDevice.info', 'Code sent by e-mail. Enter it in the "code" state.', true);
+            this.log.info('Device verification code sent to the account e-mail.');
+        } catch (e) {
+            this.setStateConditional('control.extended.verifyDevice.info', 'Send failed: ' + e.message, true);
+            this.log.error('Device verification (send) failed: ' + e.message);
+        } finally {
+            this.setStateConditional('control.extended.verifyDevice.sendCode', false, true);
+        }
+    }
+
+    async runDeviceVerify(code) {
+        try {
+            this.setStateConditional('control.extended.verifyDevice.info', 'Verifying device ...', true);
+            await this._buildVerifyApi().verifyDevice(this.config.email, code);
+            this.setStateConditional('control.extended.verifyDevice.code', '', true);
+            this.setStateConditional('control.extended.verifyDevice.info', 'Device verified. Reconnecting ...', true);
+            this.log.info('Device verified successfully. Reconnecting ...');
+            setTimeout(() => this.reconnect(), 1500);
+        } catch (e) {
+            this.setStateConditional('control.extended.verifyDevice.info', 'Verify failed: ' + e.message, true);
+            this.log.error('Device verification failed: ' + e.message);
+        }
+    }
+
     onStateChange(id, state) {
         if (!state) return;
+        if (!state.ack) {
+            if (id.endsWith('.control.extended.verifyDevice.sendCode') && state.val) {
+                this.runDeviceVerifySend();
+                return;
+            }
+            if (id.endsWith('.control.extended.verifyDevice.code') && state.val !== '' && state.val !== null && state.val !== undefined) {
+                this.runDeviceVerify(String(state.val));
+                return;
+            }
+        }
         (async () => {
             try {
                 await adapterCommands.handleStateChange(this, id, state);
